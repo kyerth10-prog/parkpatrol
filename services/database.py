@@ -27,7 +27,7 @@ ENABLED = os.environ.get("DB_ENABLED", "true").lower() != "false"
 # Hosted MySQL (e.g. Aiven) needs TLS. DB_SSL_CA is the provider's CA
 # certificate: a file path, or its PEM text pasted into an environment variable.
 SSL_ENABLED = os.environ.get("DB_SSL", "false").lower() == "true"
-SSL_CA = os.environ.get("DB_SSL_CA", "").strip()
+SSL_CA = os.environ.get("DB_SSL_CA", "").strip().strip("'\"")
 
 RETRY_SECONDS = 15
 
