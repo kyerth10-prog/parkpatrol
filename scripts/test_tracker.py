@@ -15,12 +15,8 @@ STATUSES = ["VACANT", "OCCUPIED", "OCCUPIED", "VIOLATION_DOUBLE_PARKED"]
 INTERVAL = 1.5
 STRADDLE_CHANCE = 0.15
 
-ROWS = [
-    [f"A{i}" for i in range(1, 6)],
-    [f"A{i}" for i in range(6, 10)],
-    [f"A{i}" for i in range(10, 15)],
-    [f"A{i}" for i in range(15, 19)],
-]
+# Three covered bays of two spots; a car can straddle the two spots in one bay
+ROWS = [["A1", "A2"], ["A3", "A4"], ["A5", "A6"]]
 SPOT_IDS = [spot for row in ROWS for spot in row]
 ADJACENT_PAIRS = [row[i:i + 2] for row in ROWS for i in range(len(row) - 1)]
 

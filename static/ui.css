@@ -185,7 +185,8 @@ input { caret-color: var(--green); }
 /* ---------------------------------------------------------------------------
    Bay lamps (signature)
 --------------------------------------------------------------------------- */
-.lamps { display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 8px; }
+.lamps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; max-width: 760px; }
+.lamps .lamp:nth-child(2n):not(:last-child) { margin-right: 12px; }
 
 .lamp {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -237,7 +238,6 @@ input { caret-color: var(--green); }
 .lamps.is-loading .lamp__light { animation: shimmer-fade 1.2s ease-in-out infinite; }
 @keyframes shimmer-fade { 50% { opacity: .45; } }
 
-@media (max-width: 1024px) { .lamps { grid-template-columns: repeat(9, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
   .lamps { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
   .lamp { padding: 12px 0 10px; gap: 8px; }
@@ -312,14 +312,20 @@ input { caret-color: var(--green); }
 /* ---------------------------------------------------------------------------
    Lot map (SVG drawn by lot.js)
 --------------------------------------------------------------------------- */
-.lot { position: relative; max-width: 520px; margin: 0 auto; }
+.lot { position: relative; max-width: 380px; margin: 0 auto; }
 .lot svg { display: block; width: 100%; height: auto; overflow: visible; }
-.lot .band { fill: var(--bg-subtle); stroke: var(--line); stroke-width: 1; }
-.lot .asphalt { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
-.lot .lane { fill: none; stroke: var(--line-strong); stroke-width: 1.25; stroke-dasharray: 2 7; stroke-linecap: round; }
-.lot .island { fill: var(--green-tint); stroke: var(--green-tint-2); stroke-width: 1.5; }
-.lot .island-label { fill: var(--green-deep); font-family: var(--font); font-size: 18px; font-weight: 600; letter-spacing: .02em; }
-.lot .island-sub { fill: var(--green-ink); font-family: var(--font); font-size: 11px; font-weight: 500; letter-spacing: .1em; }
+.lot .ground { fill: var(--bg-subtle); stroke: var(--line); stroke-width: 1; }
+.lot .road { fill: #e4e9e6; }
+.lot .road-edge { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+.lot .crosswalk { fill: var(--bg); }
+.lot .arrow { fill: none; stroke: var(--faint); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+.lot .arrow-head { fill: var(--faint); opacity: .55; }
+.lot .park { fill: var(--green-tint); stroke: var(--green-tint-2); stroke-width: 1.5; }
+.lot .gazebo { fill: var(--bg); stroke: var(--green-tint-2); stroke-width: 1.5; }
+.lot .park-label { fill: var(--green-ink); font-family: var(--font); font-size: 13px; font-weight: 600; }
+.lot .bay-frame { fill: var(--bg); stroke: var(--line-strong); stroke-width: 2; }
+.lot .bay-post { stroke: var(--line-strong); stroke-width: 2; }
+.lot .lot-label { fill: var(--muted); font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .12em; }
 
 .lot .spot {
   fill: var(--bg); stroke: var(--line-strong); stroke-width: 1.5; cursor: pointer;
@@ -795,3 +801,12 @@ input { caret-color: var(--green); }
 .avatar { overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .menu__header strong { font-size: 14px; font-weight: 600; color: var(--ink); margin-top: 2px; }
+
+/* Six-spot lot: larger lamps */
+.lamp { padding: 18px 0 14px; }
+.lamp__light { width: 26px; height: 26px; }
+.lamp__id { font-size: 13px; }
+@media (max-width: 560px) {
+  .lamps .lamp:nth-child(2n):not(:last-child) { margin-right: 6px; }
+  .lamp__light { width: 22px; height: 22px; }
+}

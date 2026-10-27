@@ -253,6 +253,36 @@ def start():
     return load_spots()
 
 
+def sync_spots(spot_ids):
+    """Make the spots table match the current lot layout (one row on the right).
+
+    Spots left over from an older layout are removed when nothing refers to
+    them; ones with history are kept so past events stay intact.
+    """
+    if not ENABLED:
+        return
+    try:
+        with _reader() as cur:
+            if cur is None:
+                return
+            for position, spot_id in enumerate(spot_ids, start=1):
+                cur.execute(
+                    """INSERT INTO spots (id, side, position, status_since) VALUES (%s, 'right', %s, NOW(3))
+                       ON DUPLICATE KEY UPDATE side = 'right', position = VALUES(position)""",
+                    (spot_id, position),
+                )
+            placeholders = ", ".join(["%s"] * len(spot_ids))
+            cur.execute(
+                f"""DELETE FROM spots WHERE id NOT IN ({placeholders})
+                      AND id NOT IN (SELECT spot_id FROM spot_events)
+                      AND id NOT IN (SELECT spot_id FROM violation_spots)
+                      AND id NOT IN (SELECT spot_id FROM availability_broadcasts)""",
+                spot_ids,
+            )
+    except pymysql.MySQLError as error:
+        print("Database error:", error)
+
+
 def load_spots():
     try:
         with _reader() as cur:

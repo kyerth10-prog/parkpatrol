@@ -84,7 +84,7 @@ oauth.register(
 # ----------------------------------------------------------------------------
 # State
 # ----------------------------------------------------------------------------
-SPOT_IDS = [f"A{i}" for i in range(1, 19)]
+SPOT_IDS = [f"A{i}" for i in range(1, 7)]   # Lot A: 3 covered bays x 2 spots, A1 at the top
 VALID_STATUSES = {"VACANT", "OCCUPIED", "VIOLATION_DOUBLE_PARKED"}
 VIOLATION = "VIOLATION_DOUBLE_PARKED"
 MAX_SPOTS_PER_UPDATE = 3
@@ -403,7 +403,9 @@ def logout(request: Request):
 # Startup
 # ----------------------------------------------------------------------------
 def restore_spots():
-    for spot_id, (status, status_since) in database.start().items():
+    saved = database.start()          # creates the tables first
+    database.sync_spots(SPOT_IDS)     # then matches the spots table to the current layout
+    for spot_id, (status, status_since) in saved.items():
         if spot_id in statuses and status in VALID_STATUSES:
             statuses[spot_id] = status
             since[spot_id] = status_since

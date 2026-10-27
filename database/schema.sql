@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS auth_events (
 -- Parking spots and their history
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS spots (
-  id          VARCHAR(4)  PRIMARY KEY COMMENT 'A1 to A18',
+  id          VARCHAR(4)  PRIMARY KEY COMMENT 'A1 to A6',
   lot         VARCHAR(16) NOT NULL DEFAULT 'A',
   side        ENUM('top', 'right', 'bottom', 'left') NOT NULL,
   position    TINYINT UNSIGNED NOT NULL,
@@ -143,12 +143,10 @@ CREATE TABLE IF NOT EXISTS system_events (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------
--- Lot A layout (matches static/lot.js)
+-- Lot A layout (matches static/lot.js): one row of 6 spots on the right side
+-- of the road, A1 at the top to A6 at the bottom, in 3 covered bays of 2
 -- ---------------------------------------------------------------------------
 INSERT IGNORE INTO spots (id, side, position, status_since) VALUES
-  ('A1', 'top', 1, NOW(3)), ('A2', 'top', 2, NOW(3)), ('A3', 'top', 3, NOW(3)),
-  ('A4', 'top', 4, NOW(3)), ('A5', 'top', 5, NOW(3)),
-  ('A6', 'right', 1, NOW(3)), ('A7', 'right', 2, NOW(3)), ('A8', 'right', 3, NOW(3)), ('A9', 'right', 4, NOW(3)),
-  ('A10', 'bottom', 1, NOW(3)), ('A11', 'bottom', 2, NOW(3)), ('A12', 'bottom', 3, NOW(3)),
-  ('A13', 'bottom', 4, NOW(3)), ('A14', 'bottom', 5, NOW(3)),
-  ('A15', 'left', 1, NOW(3)), ('A16', 'left', 2, NOW(3)), ('A17', 'left', 3, NOW(3)), ('A18', 'left', 4, NOW(3));
+  ('A1', 'right', 1, NOW(3)), ('A2', 'right', 2, NOW(3)),
+  ('A3', 'right', 3, NOW(3)), ('A4', 'right', 4, NOW(3)),
+  ('A5', 'right', 5, NOW(3)), ('A6', 'right', 6, NOW(3));
