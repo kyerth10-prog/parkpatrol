@@ -30,6 +30,9 @@ def _load():
     except (FileNotFoundError, ValueError):
         _subscribers = {}
     database.subscriber_import(_subscribers)
+    # Hosted servers lose local files on every deploy, so MySQL is the source of truth
+    for chat_id, sub in database.load_subscribers().items():
+        _subscribers.setdefault(chat_id, sub)
 
 
 def _save():

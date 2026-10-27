@@ -7,6 +7,8 @@ keeps running from memory and retries the connection.
 import os
 import queue
 import re
+import ssl
+import tempfile
 import threading
 import time
 from datetime import datetime
@@ -22,6 +24,10 @@ USER = os.environ.get("DB_USER", "root").strip()
 PASSWORD = os.environ.get("DB_PASSWORD", "")
 NAME = os.environ.get("DB_NAME", "parkpatrol").strip()
 ENABLED = os.environ.get("DB_ENABLED", "true").lower() != "false"
+# Hosted MySQL (e.g. Aiven) needs TLS. DB_SSL_CA is the provider's CA
+# certificate: a file path, or its PEM text pasted into an environment variable.
+SSL_ENABLED = os.environ.get("DB_SSL", "false").lower() == "true"
+SSL_CA = os.environ.get("DB_SSL_CA", "").strip()
 
 RETRY_SECONDS = 15
 
@@ -40,10 +46,25 @@ def _dt(ts):
     return datetime.fromtimestamp(ts) if ts is not None else None
 
 
+def _ssl_context():
+    """Verified TLS context; the server certificate is always checked."""
+    if not SSL_ENABLED:
+        return None
+    if "BEGIN CERTIFICATE" in SSL_CA:
+        handle = tempfile.NamedTemporaryFile("w", suffix=".pem", delete=False)
+        handle.write(SSL_CA.replace("\\n", "\n"))
+        handle.close()
+        return ssl.create_default_context(cafile=handle.name)
+    return ssl.create_default_context(cafile=SSL_CA or None)
+
+
+_SSL = _ssl_context()
+
+
 def _connect(database=NAME):
     return pymysql.connect(
         host=HOST, port=PORT, user=USER, password=PASSWORD, database=database,
-        charset="utf8mb4", autocommit=True, connect_timeout=5,
+        charset="utf8mb4", autocommit=True, connect_timeout=10, ssl=_SSL,
     )
 
 
@@ -307,6 +328,26 @@ def _last_violation_id(cur, spot_ids):
 # ----------------------------------------------------------------------------
 # Telegram subscribers
 # ----------------------------------------------------------------------------
+def load_subscribers():
+    """Active subscribers saved in MySQL, in the shape telegram_bot keeps them."""
+    conn = _connection() if ENABLED else None
+    if conn is None:
+        return {}
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT chat_id, subscribed_at, last_notified_at FROM telegram_subscribers WHERE active")
+            return {
+                str(chat_id): {
+                    "since": subscribed.timestamp(),
+                    "last_notified": notified.timestamp() if notified else 0,
+                }
+                for chat_id, subscribed, notified in cur.fetchall()
+            }
+    except pymysql.MySQLError as error:
+        print("Database error:", error)
+        return {}
+
+
 def subscriber_added(chat_id, since=None):
     when = _dt(since) if since else datetime.now()
 

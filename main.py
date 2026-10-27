@@ -38,8 +38,9 @@ GOOGLE_CLIENT_SECRET = require_env("GOOGLE_CLIENT_SECRET")
 SESSION_SECRET = require_env("SESSION_SECRET")
 TRACKER_API_KEY = require_env("TRACKER_API_KEY")
 ADMIN_EMAILS = {e.strip().lower() for e in require_env("ADMIN_EMAILS").split(",") if e.strip()}
-BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
-HTTPS_ONLY = os.environ.get("HTTPS_ONLY", "false").lower() == "true"
+ON_RENDER = bool(os.environ.get("RENDER"))
+BASE_URL = (os.environ.get("BASE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:8000").rstrip("/")
+HTTPS_ONLY = os.environ.get("HTTPS_ONLY", "true" if ON_RENDER else "false").lower() == "true"
 
 
 # ----------------------------------------------------------------------------
@@ -141,6 +142,11 @@ def public_view():
 @app.get("/")
 def public_page():
     return FileResponse(BASE_DIR / "static" / "index.html")
+
+
+@app.get("/healthz")
+def health():
+    return {"ok": True}
 
 
 @app.get("/api/spots")

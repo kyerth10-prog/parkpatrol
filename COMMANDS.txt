@@ -6,7 +6,7 @@ SETUP (first time only)
 -----------------------
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-camera.txt   (server + camera tools)
 python scripts/setup_env.py
 python scripts/telegram_setup.py
 tools/ngrok config add-authtoken YOUR_NGROK_TOKEN
@@ -16,7 +16,7 @@ RUN
 ---
 Activate environment:       source .venv/bin/activate
 Start server (local):       python main.py
-Start server + public URL:  ./scripts/start_public.sh
+Start server + public URL:  ./scripts/start_public.sh   (old ngrok setup)
 Start camera feed:          python scripts/send_frame.py
 Simulate tracker:           python scripts/test_tracker.py
 Notification demo:          python scripts/demo_notify.py
@@ -72,6 +72,22 @@ DATABASE (XAMPP MySQL)
 4. Settings live in .env:   DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
    DB_ENABLED=false         run without MySQL
 If MySQL is off, the site still works; history just isn't saved.
+
+
+WEBSITE ON RENDER
+-----------------
+The public site runs on Render and redeploys by itself after every push:
+  git add -A && git commit -m "What changed" && git push
+Render settings live in the Render dashboard (Environment tab), not in .env.
+
+Send the camera to Render (set in .env on the camera laptop):
+  TRACKER_SERVER_URL=https://YOUR-APP.onrender.com
+  CAMERA_FPS=3              keep this low: video uses Render's monthly bandwidth
+Then run:                   python scripts/send_frame.py
+
+Do NOT run python main.py locally while Render is live with the same
+TELEGRAM_BOT_TOKEN: two copies of the bot fight over Telegram messages.
+Free plan: the site sleeps after 15 min without traffic (~1 min to wake).
 
 
 OPTIONAL .env SETTINGS

@@ -1,0 +1,5 @@
+# Camera client (runs on the laptop next to the camera, not on Render)
+-r requirements.txt
+opencv-python==4.10.0.84
+numpy==1.24.4
+requests==2.32.4
