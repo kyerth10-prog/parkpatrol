@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Park Patrol · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/static/ui.css?v=7">
+</head>
+<body class="admin has-tabbar">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="sidebar__brand">
+        <a class="brand" href="/admin">
+          <svg class="brand__mark" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#0f1712"/><path d="M10.5 20V8.5h4.25a3.75 3.75 0 0 1 0 7.5H10.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20.5" cy="20.5" r="3" fill="#3fcf73"/></svg>
+          <span class="brand__text"><b>Park Patrol</b><small>Admin console</small></span>
+        </a>
+        <button class="icon-btn icon-btn--sm menu-btn" type="button" data-drawer-close aria-label="Close menu">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar__nav js-spy">
+        <a class="navlink" href="#dashboard"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#grid"></use></svg>Dashboard</a>
+        <a class="navlink" href="#camera"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#video"></use></svg>Live camera</a>
+        <a class="navlink" href="#map"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Lot map</a>
+        <a class="navlink" href="#violations"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#alert"></use></svg>Violations<span class="badge is-empty" data-viol-badge>0</span></a>
+        <a class="navlink" href="#activity"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>Activity</a>
+      </nav>
+
+      <p class="sidebar__section">Coming soon</p>
+      <nav class="sidebar__nav">
+        <button class="navlink" type="button" data-soon="Reports"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#chart"></use></svg>Reports<span class="tag">Soon</span></button>
+        <button class="navlink" type="button" data-soon="Lot settings"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>Settings<span class="tag">Soon</span></button>
+      </nav>
+
+      <div class="sidebar__foot">
+        <div class="tracker-card">
+          <span class="live" id="tracker-live"><span class="live__dot" aria-hidden="true"></span></span>
+          <div><b id="tracker-title">Tracker</b><span id="tracker-sub">Waiting for data…</span></div>
+        </div>
+        <a class="navlink" href="/logout"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#logout"></use></svg>Sign out</a>
+      </div>
+    </aside>
+    <div class="scrim" data-drawer-close></div>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar js-elevate">
+        <button class="icon-btn menu-btn" type="button" data-drawer-open aria-label="Open menu">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#menu"></use></svg>
+        </button>
+        <div class="topbar__title">
+          <h1>Dashboard</h1>
+          <p id="today">&nbsp;</p>
+        </div>
+
+        <div class="topbar__actions">
+          <span class="live" id="top-live" title="Tracker connection"><span class="live__dot" aria-hidden="true"></span><span id="top-live-text">Connecting…</span><span class="live__short" id="top-live-short">Live</span></span>
+          <label class="search">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#search"></use></svg>
+            <span class="sr-only">Search activity by spot</span>
+            <input type="search" id="search" placeholder="Search spot, e.g. A4" autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+
+          <a class="icon-btn icon-btn--bordered" href="#violations" aria-label="Violations">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>
+            <span class="badge is-empty" data-viol-badge>0</span>
+          </a>
+
+          <div class="dropdown">
+            <button class="user-btn" type="button" data-menu aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+              <span class="avatar" id="avatar">·</span>
+              <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#chevron-down"></use></svg>
+            </button>
+            <div class="menu" role="menu">
+              <div class="menu__header"><b>Signed in as</b><strong id="who-name" hidden></strong><span id="who">…</span></div>
+              <button class="menu__item" type="button" role="menuitem" data-soon="Profile"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Profile</button>
+              <button class="menu__item" type="button" role="menuitem" data-soon="Notification preferences"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>Notifications</button>
+              <button class="menu__item" type="button" role="menuitem" data-soon="Settings"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>Settings</button>
+              <div class="menu__sep"></div>
+              <a class="menu__item" role="menuitem" href="/" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#home"></use></svg>Open public page</a>
+              <a class="menu__item menu__item--danger" role="menuitem" href="/logout"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#logout"></use></svg>Sign out</a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content" id="main">
+        <div class="banner" id="offline" role="alert" hidden>
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#alert"></use></svg>
+          <span id="offline-text"></span>
+        </div>
+
+        <!-- Bay rail -->
+        <section class="panel bays" id="dashboard" aria-labelledby="bays-title">
+          <div class="bays__head">
+            <div>
+              <h2 id="bays-title">Lot A bays</h2>
+              <p>Live status with time in current state</p>
+            </div>
+            <div class="legend">
+              <span><span class="dot dot--ok"></span>Vacant</span>
+              <span><span class="dot dot--taken"></span>Occupied</span>
+              <span><span class="dot dot--warn"></span>Violation</span>
+            </div>
+          </div>
+          <div class="lamps" id="lamps" role="group" aria-label="Bays A1 to A18"></div>
+        </section>
+
+        <!-- KPIs -->
+        <section class="kpis" aria-label="Summary">
+          <div class="panel kpi kpi--ok">
+            <div class="kpi__top"><span class="kpi__label">Available</span></div>
+            <div class="kpi__value"><span id="c-free" class="skeleton">00</span><small id="c-total"></small></div>
+            <div class="kpi__foot" id="c-free-foot">&nbsp;</div>
+          </div>
+          <div class="panel kpi kpi--taken">
+            <div class="kpi__top"><span class="kpi__label">Occupied</span></div>
+            <div class="kpi__value"><span id="c-taken" class="skeleton">00</span></div>
+            <div class="kpi__foot" id="c-taken-foot">&nbsp;</div>
+          </div>
+          <div class="panel kpi kpi--warn" id="kpi-viol">
+            <div class="kpi__top"><span class="kpi__label">Violations</span></div>
+            <div class="kpi__value"><span id="c-viol" class="skeleton">00</span></div>
+            <div class="kpi__foot" id="c-viol-foot">&nbsp;</div>
+          </div>
+          <div class="panel kpi kpi--brand">
+            <div class="kpi__top"><span class="kpi__label">Occupancy</span></div>
+            <div class="kpi__value"><span id="c-occ" class="skeleton">00</span></div>
+            <div class="meter"><span class="meter__fill" id="c-occ-fill"></span></div>
+          </div>
+        </section>
+
+        <!-- Camera and map -->
+        <div class="split">
+          <section class="panel" id="camera" aria-labelledby="camera-title">
+            <div class="panel__head">
+              <div class="panel__title"><h2 id="camera-title">Live camera</h2><p>Lot A · main entrance view</p></div>
+              <div class="panel__tools">
+                <button class="icon-btn icon-btn--bordered icon-btn--sm" type="button" id="cam-pause" aria-label="Pause feed" title="Pause feed">
+                  <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#pause"></use></svg>
+                </button>
+                <button class="icon-btn icon-btn--bordered icon-btn--sm" type="button" id="cam-snap" aria-label="Save snapshot" title="Save snapshot">
+                  <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#camera"></use></svg>
+                </button>
+                <button class="icon-btn icon-btn--bordered icon-btn--sm" type="button" id="cam-full" aria-label="Full screen" title="Full screen">
+                  <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#maximize"></use></svg>
+                </button>
+              </div>
+            </div>
+            <div class="camera" id="camera-box">
+              <canvas id="video" role="img" aria-label="Live view of the lot" hidden></canvas>
+              <div class="camera__empty" id="novideo">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#video"></use></svg>
+                <b>No video frame yet</b>
+                <span>The feed will appear once the tracker starts sending frames.</span>
+              </div>
+              <div class="camera__overlay">
+                <div class="camera__row">
+                  <span class="camera__badge" id="cam-badge"><span class="live__dot"></span><span id="cam-badge-text">LIVE</span></span>
+                  <span class="camera__time" id="cam-time"></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="map" aria-labelledby="map-title">
+            <div class="panel__head">
+              <div class="panel__title"><h2 id="map-title">Lot layout</h2><p>Select a spot for details</p></div>
+            </div>
+            <div id="lot" class="lot is-loading"></div>
+            <div class="panel__foot"><div class="legend">
+              <span><span class="dot dot--ok"></span>Vacant</span>
+              <span><span class="dot dot--taken"></span>Occupied</span>
+              <span><span class="dot dot--warn"></span>Violation</span>
+            </div></div>
+          </section>
+        </div>
+
+        <!-- Violations and activity -->
+        <div class="two-col">
+          <div class="stack">
+          <section class="panel" id="violations" aria-labelledby="viol-title">
+            <div class="panel__head">
+              <div class="panel__title"><h2 id="viol-title">Active violations</h2><p>Double-parked vehicles</p></div>
+            </div>
+            <div id="viol" class="list" aria-live="polite"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="sys-title">
+            <div class="panel__head">
+              <div class="panel__title"><h2 id="sys-title">System status</h2><p>Health of the tracker and alerts</p></div>
+            </div>
+            <dl class="status-list">
+              <div><dt><span class="dot" id="sys-tracker-dot"></span>Tracker</dt><dd id="sys-tracker">Waiting for data…</dd></div>
+              <div><dt><span class="dot" id="sys-camera-dot"></span>Camera feed</dt><dd id="sys-camera">No frame yet</dd></div>
+              <div><dt><span class="dot" id="sys-tg-dot"></span>Telegram alerts</dt><dd id="sys-tg">Checking…</dd></div>
+              <div><dt><span class="dot dot--ok"></span>Dashboard refresh</dt><dd>Every 2 seconds</dd></div>
+            </dl>
+          </section>
+          </div>
+
+          <section class="panel" id="activity" aria-labelledby="act-title">
+            <div class="panel__head">
+              <div class="panel__title"><h2 id="act-title">Recent events</h2><p id="act-sub">Latest status changes</p></div>
+              <div class="panel__tools">
+                <button class="btn btn--sm" type="button" id="export">
+                  <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#download"></use></svg>
+                  <span class="hide-sm">Export</span> CSV
+                </button>
+              </div>
+            </div>
+            <div class="chips" id="filters" role="group" aria-label="Filter events">
+              <button class="chip" type="button" aria-pressed="true" data-filter="all">All <span class="count" data-count="all"></span></button>
+              <button class="chip" type="button" aria-pressed="false" data-filter="VIOLATION_DOUBLE_PARKED">Violations <span class="count" data-count="VIOLATION_DOUBLE_PARKED"></span></button>
+              <button class="chip" type="button" aria-pressed="false" data-filter="OCCUPIED">Arrivals <span class="count" data-count="OCCUPIED"></span></button>
+              <button class="chip" type="button" aria-pressed="false" data-filter="VACANT">Departures <span class="count" data-count="VACANT"></span></button>
+            </div>
+            <div class="table-wrap mt-4">
+              <table class="table">
+                <thead><tr><th>Time</th><th>Spot</th><th>Change</th></tr></thead>
+                <tbody id="events"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="events-empty" hidden>
+              <span class="empty__icon empty__icon--neutral"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg></span>
+              <b>No events yet</b>
+              <span id="events-empty-text">Status changes will show up here as they happen.</span>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="tabbar js-spy" aria-label="Sections">
+    <a href="#dashboard"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#grid"></use></svg>Home</a>
+    <a href="#camera"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#video"></use></svg>Camera</a>
+    <a href="#map"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Map</a>
+    <a href="#violations"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#alert"></use></svg>Alerts<span class="badge tab-badge is-empty" data-viol-badge>0</span></a>
+    <a href="#activity"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>Activity</a>
+  </nav>
+
+  <!-- Spot sheet -->
+  <div class="sheet" id="spot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet__scrim" data-sheet-close></div>
+    <div class="sheet__panel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
+      </button>
+      <div class="spot-detail">
+        <div class="spot-detail__head">
+          <span class="spot-detail__id" id="sheet-id">A1</span>
+          <div>
+            <h3 id="sheet-title">Spot A1</h3>
+            <span class="pill" id="sheet-status">—</span>
+          </div>
+        </div>
+        <p class="muted" id="sheet-text"></p>
+        <div class="spot-detail__actions">
+          <button class="btn" type="button" id="sheet-history">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>
+            History
+          </button>
+          <button class="btn btn--primary" type="button" data-soon="Manual status override">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>
+            Override
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/ui.js?v=7"></script>
+  <script src="/static/lot.js?v=7"></script>
+  <script>
+    const lot = LOT.render(document.getElementById("lot"));
+    const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
+    const video = document.getElementById("video");
+    const novideo = document.getElementById("novideo");
+    const NICE = { VACANT: "Vacant", OCCUPIED: "Occupied", VIOLATION_DOUBLE_PARKED: "Double-parked" };
+    const CLASS = { VACANT: "available", OCCUPIED: "taken", VIOLATION_DOUBLE_PARKED: "violation" };
+    const PILL = { VACANT: "pill--ok", OCCUPIED: "pill--taken", VIOLATION_DOUBLE_PARKED: "pill--warn" };
+
+    let state = null;
+    let filter = "all";
+    let search = "";
+    let lastViolCount = null;
+    let selected = null;
+    let paused = false;
+
+    document.getElementById("today").textContent =
+      new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+
+    function minutes(seconds) {
+      if (seconds < 60) return Math.round(seconds) + " s";
+      return Math.round(seconds / 60) + " min";
+    }
+    function short(seconds) {
+      if (seconds < 60) return Math.max(0, Math.round(seconds)) + "s";
+      if (seconds < 3600) return Math.round(seconds / 60) + "m";
+      return Math.round(seconds / 3600) + "h";
+    }
+    function time(ts) {
+      return new Date(ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+    }
+
+    async function refreshState() {
+      let res;
+      try {
+        res = await fetch("/api/admin/state", { cache: "no-store" });
+      } catch (error) {
+        showBanner("Can't reach the server. Retrying…");
+        setTopLive(false, "Reconnecting…");
+        return;
+      }
+      if (res.status === 401) { location.href = "/login"; return; }
+      if (!res.ok) return;
+      const data = await res.json();
+      state = data;
+
+      // Account
+      const account = data.admin || { email: data.signed_in_as };
+      document.getElementById("who").textContent = account.email;
+      const whoName = document.getElementById("who-name");
+      whoName.textContent = account.name || "";
+      whoName.hidden = !account.name;
+      const avatar = document.getElementById("avatar");
+      if (account.picture && !avatar.querySelector("img")) {
+        const img = document.createElement("img");
+        img.alt = "";
+        img.referrerPolicy = "no-referrer";
+        img.src = account.picture;
+        img.onerror = () => { img.remove(); avatar.textContent = (account.name || account.email).charAt(0); };
+        avatar.replaceChildren(img);
+      } else if (!account.picture) {
+        avatar.textContent = (account.name || account.email).charAt(0);
+      }
+
+      // Spots
+      const states = {};
+      let free = 0, taken = 0, viol = 0;
+      const incidents = new Map();
+      for (const id in data.spots) {
+        const s = data.spots[id];
+        states[id] = CLASS[s.status];
+        if (s.status === "VACANT") free++;
+        else if (s.status === "OCCUPIED") taken++;
+        else {
+          viol++;
+          const group = s.group || [id];
+          const key = group.join("+");
+          const entry = incidents.get(key) || { key, ids: group, since: s.since };
+          entry.since = Math.min(entry.since, s.since);
+          incidents.set(key, entry);
+        }
+      }
+      const violList = [...incidents.values()].map((v) => ({ ...v, for: data.server_time - v.since }));
+      const total = free + taken + viol;
+      lot.update(states);
+      lot.groups(violList.map((v) => v.ids));
+      const meta = {};
+      for (const id in data.spots) meta[id] = short(data.server_time - data.spots[id].since);
+      lamps.update(states, meta, { available: "vacant", taken: "occupied", violation: "double-parked" });
+
+      UI.count(document.getElementById("c-free"), free);
+      UI.count(document.getElementById("c-taken"), taken);
+      UI.count(document.getElementById("c-viol"), violList.length);
+      const occ = total ? Math.round(((taken + viol) / total) * 100) : 0;
+      UI.count(document.getElementById("c-occ"), occ, { suffix: "%" });
+      document.getElementById("c-total").textContent = "/" + total;
+      document.getElementById("c-free-foot").textContent = total ? Math.round((free / total) * 100) + "% of the lot is open" : "";
+      document.getElementById("c-taken-foot").textContent = taken + " parked normally";
+      document.getElementById("c-viol-foot").textContent = viol ? (viol > violList.length ? viol + " spots blocked" : "Needs attention") : "All clear";
+      document.getElementById("kpi-viol").classList.toggle("is-alert", viol > 0);
+      const occFill = document.getElementById("c-occ-fill");
+      occFill.style.width = occ + "%";
+      occFill.classList.toggle("is-mid", occ >= 50 && occ < 80);
+      occFill.classList.toggle("is-low", occ >= 80);
+
+      // Violation badges
+      document.querySelectorAll("[data-viol-badge]").forEach((b) => {
+        b.textContent = violList.length;
+        b.classList.toggle("is-empty", violList.length === 0);
+        if (lastViolCount !== null && violList.length > lastViolCount) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+      });
+      if (lastViolCount !== null && violList.length > lastViolCount) UI.toast("New violation detected", { icon: "alert", tone: "warn" });
+      lastViolCount = violList.length;
+      renderViolations(violList);
+
+      // Tracker health
+      const trackerLive = document.getElementById("tracker-live");
+      const trackerTitle = document.getElementById("tracker-title");
+      const trackerSub = document.getElementById("tracker-sub");
+      if (data.tracker_seen === null) {
+        showBanner("The tracker has not sent anything yet.");
+        trackerLive.classList.add("is-offline");
+        trackerTitle.textContent = "Tracker waiting";
+        trackerSub.textContent = "No data received yet";
+        setTopLive(false, "Tracker waiting");
+      } else if (data.server_time - data.tracker_seen > 15) {
+        showBanner("No data from the tracker for " + minutes(data.server_time - data.tracker_seen) + ".");
+        trackerLive.classList.add("is-offline");
+        trackerTitle.textContent = "Tracker offline";
+        trackerSub.textContent = "Last seen " + UI.ago(data.server_time - data.tracker_seen);
+        setTopLive(false, "Tracker offline");
+      } else {
+        document.getElementById("offline").hidden = true;
+        trackerLive.classList.remove("is-offline");
+        trackerTitle.textContent = "Tracker online";
+        setTopLive(true, "Live · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+        trackerSub.textContent = "Last seen " + UI.ago(data.server_time - data.tracker_seen);
+      }
+
+      // System status
+      const trackerOk = data.tracker_seen !== null && data.server_time - data.tracker_seen <= 15;
+      setStatus("tracker", trackerOk, data.tracker_seen === null ? "No data received yet" : (trackerOk ? "Online · " : "Offline · ") + "last seen " + UI.ago(data.server_time - data.tracker_seen));
+      setStatus("tg", data.telegram_enabled, data.telegram_enabled ? "Enabled for security" : "Not configured");
+
+      renderEvents();
+      if (selected) fillSheet(selected);
+    }
+
+    function setStatus(key, ok, text) {
+      document.getElementById("sys-" + key + "-dot").className = "dot " + (ok ? "dot--ok" : "dot--unknown");
+      document.getElementById("sys-" + key).textContent = text;
+    }
+
+    function setTopLive(ok, text) {
+      document.getElementById("top-live").classList.toggle("is-offline", !ok);
+      document.getElementById("top-live-text").textContent = text;
+      document.getElementById("top-live-short").textContent = ok ? "Live" : "Offline";
+    }
+
+    function showBanner(text) {
+      document.getElementById("offline-text").textContent = text;
+      document.getElementById("offline").hidden = false;
+    }
+
+    // Violations
+    function renderViolations(list) {
+      const box = document.getElementById("viol");
+      if (!list.length) {
+        if (!box.querySelector(".empty")) {
+          box.innerHTML = `<div class="empty"><span class="empty__icon">${UI.icon("check")}</span><b>All clear</b><span>No double-parked vehicles right now.</span></div>`;
+        }
+        return;
+      }
+      box.querySelector(".empty")?.remove();
+      const keys = new Set(list.map((v) => v.key));
+      box.querySelectorAll("[data-viol]").forEach((row) => { if (!keys.has(row.dataset.viol)) row.remove(); });
+      for (const v of list) {
+        let row = box.querySelector(`[data-viol="${v.key}"]`);
+        if (!row) {
+          row = document.createElement("div");
+          row.className = "list-item list-item--warn";
+          row.dataset.viol = v.key;
+          row.innerHTML = `
+            <span class="list-item__icon"></span>
+            <div class="list-item__body"><b>Double-parked</b><span></span></div>
+            <div class="list-item__actions">
+              <button class="btn btn--sm" type="button" data-alert>${UI.icon("bell")}Alert</button>
+              <button class="btn btn--sm btn--soft" type="button" data-soon="Mark as resolved">${UI.icon("check")}Resolve</button>
+            </div>`;
+          const icon = row.querySelector(".list-item__icon");
+          icon.textContent = v.ids.join("+");
+          icon.classList.toggle("list-item__icon--multi", v.ids.length > 1);
+          if (v.ids.length > 1) row.querySelector(".list-item__body b").textContent = "Double-parked across " + v.ids.length + " spots";
+          row.querySelector("[data-alert]").dataset.alert = v.ids[0];
+          box.appendChild(row);
+        }
+        row.querySelector(".list-item__body span").textContent =
+          (v.ids.length > 1 ? "Spots " : "Spot ") + v.ids.join(" + ") + " · for " + minutes(v.for);
+      }
+    }
+
+    // Security alert
+    document.getElementById("viol").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-alert]");
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/admin/alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ spot_id: btn.dataset.alert }),
+        });
+        if (res.status === 401) { location.href = "/login"; return; }
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) UI.toast("Security alerted on Telegram", { icon: "check" });
+        else UI.toast(data.detail || "Couldn't send the alert", { icon: "alert", tone: "warn" });
+      } catch (error) {
+        UI.toast("Couldn't reach the server", { icon: "alert", tone: "warn" });
+      } finally {
+        setTimeout(() => (btn.disabled = false), 3000);
+      }
+    });
+
+    // Events table
+    function visibleEvents() {
+      if (!state) return [];
+      return state.events.filter((ev) =>
+        (filter === "all" || ev.to === filter) &&
+        (!search || ev.spot_id.toLowerCase().includes(search))
+      );
+    }
+
+    function renderEvents() {
+      if (!state) return;
+      const counts = { all: state.events.length, VACANT: 0, OCCUPIED: 0, VIOLATION_DOUBLE_PARKED: 0 };
+      for (const ev of state.events) counts[ev.to]++;
+      document.querySelectorAll("[data-count]").forEach((c) => (c.textContent = counts[c.dataset.count] || ""));
+
+      const rows = visibleEvents();
+      const body = document.getElementById("events");
+      const key = rows.map((ev) => ev.time + ev.spot_id).join("|");
+      if (body.dataset.key === key) return;
+      body.dataset.key = key;
+
+      body.replaceChildren(...rows.map((ev) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="muted"></td><td><span class="spot-id"></span></td>
+          <td><span class="change"><span class="pill pill--muted"></span>${UI.icon("chevron-right")}<span class="pill"></span></span></td>`;
+        tr.children[0].textContent = time(ev.time);
+        tr.querySelector(".spot-id").textContent = ev.spot_id;
+        const pills = tr.querySelectorAll(".pill");
+        pills[0].textContent = NICE[ev.from];
+        pills[1].textContent = NICE[ev.to];
+        pills[1].classList.add(PILL[ev.to]);
+        return tr;
+      }));
+
+      const empty = !rows.length;
+      document.getElementById("events-empty").hidden = !empty;
+      body.closest(".table-wrap").hidden = empty;
+      document.getElementById("events-empty-text").textContent =
+        state.events.length ? "No events match this filter." : "Status changes will show up here as they happen.";
+      document.getElementById("act-sub").textContent =
+        search ? `Showing spots matching “${search.toUpperCase()}”` : "Latest status changes";
+    }
+
+    document.getElementById("filters").addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-filter]");
+      if (!chip) return;
+      filter = chip.dataset.filter;
+      document.querySelectorAll("#filters .chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+      renderEvents();
+    });
+
+    const searchInput = document.getElementById("search");
+    searchInput.addEventListener("input", () => {
+      search = searchInput.value.trim().toLowerCase();
+      renderEvents();
+    });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("activity").scrollIntoView({ behavior: "smooth" });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "/" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+
+    // CSV export
+    document.getElementById("export").addEventListener("click", () => {
+      const rows = visibleEvents();
+      if (!rows.length) { UI.toast("Nothing to export yet", { icon: "info" }); return; }
+      const lines = [["time", "spot", "from", "to"]].concat(
+        rows.map((ev) => [new Date(ev.time * 1000).toISOString(), ev.spot_id, ev.from, ev.to])
+      );
+      const csv = lines.map((l) => l.join(",")).join("\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "parkpatrol-events-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      UI.toast("Exported " + rows.length + " events");
+    });
+
+    // Spot details
+    function fillSheet(id) {
+      if (!state || !state.spots[id]) return;
+      const s = state.spots[id];
+      const badge = document.getElementById("sheet-id");
+      badge.textContent = id;
+      badge.className = "spot-detail__id " + CLASS[s.status];
+      document.getElementById("sheet-title").textContent = "Spot " + id;
+      const pill = document.getElementById("sheet-status");
+      pill.textContent = NICE[s.status];
+      pill.className = "pill " + PILL[s.status];
+      const across = s.group && s.group.length > 1 ? " across spots " + s.group.join(" + ") : "";
+      document.getElementById("sheet-text").textContent =
+        NICE[s.status] + across + " for " + minutes(state.server_time - s.since) + " (since " + time(s.since) + ").";
+    }
+
+    function selectSpot(id) {
+      selected = id;
+      lot.select(id);
+      lamps.select(id);
+    }
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest("#lot [data-spot], #lamps [data-spot]");
+      if (!target || !state) return;
+      selectSpot(target.dataset.spot);
+      fillSheet(selected);
+      UI.sheet.open("spot-sheet");
+    });
+    document.getElementById("spot-sheet").addEventListener("sheet:close", () => selectSpot(null));
+    document.getElementById("sheet-history").addEventListener("click", () => {
+      const id = selected;
+      UI.sheet.close("spot-sheet");
+      searchInput.value = id;
+      search = id.toLowerCase();
+      renderEvents();
+      document.getElementById("activity").scrollIntoView({ behavior: "smooth" });
+    });
+
+    // Live camera
+    const STREAM_FPS = ["localhost", "127.0.0.1"].includes(location.hostname) ? 15 : 8;
+    const ctx = video.getContext("2d");
+    const camTime = document.getElementById("cam-time");
+    const CRLF2 = [13, 10, 13, 10];
+    let streamAbort = null;
+    let lastFrameAt = 0;
+    let frameCount = 0;
+    let fps = 0;
+    let pending = null;
+    let drawing = false;
+
+    function findHeaderEnd(buf, from) {
+      outer: for (let i = from; i <= buf.length - 4; i++) {
+        for (let j = 0; j < 4; j++) if (buf[i + j] !== CRLF2[j]) continue outer;
+        return i;
+      }
+      return -1;
+    }
+
+    async function drawLatest() {
+      if (drawing) return;
+      drawing = true;
+      while (pending) {
+        const bytes = pending;
+        pending = null;
+        try {
+          const bitmap = await createImageBitmap(new Blob([bytes], { type: "image/jpeg" }));
+          if (video.width !== bitmap.width || video.height !== bitmap.height) {
+            video.width = bitmap.width;
+            video.height = bitmap.height;
+          }
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close();
+          lastFrameAt = performance.now();
+          frameCount++;
+          if (video.hidden) {
+            video.hidden = false;
+            novideo.hidden = true;
+          }
+        } catch (error) {}
+      }
+      drawing = false;
+    }
+
+    async function readStream(signal) {
+      const res = await fetch("/api/admin/stream?fps=" + STREAM_FPS, { cache: "no-store", signal });
+      if (res.status === 401) { location.href = "/login"; return; }
+      if (!res.ok || !res.body) throw new Error("stream unavailable");
+      const reader = res.body.getReader();
+      let buf = new Uint8Array(0);
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) return;
+        const merged = new Uint8Array(buf.length + value.length);
+        merged.set(buf);
+        merged.set(value, buf.length);
+        buf = merged;
+        for (;;) {
+          const headerEnd = findHeaderEnd(buf, 0);
+          if (headerEnd < 0) break;
+          const header = new TextDecoder().decode(buf.subarray(0, headerEnd));
+          const match = /Content-Length:\s*(\d+)/i.exec(header);
+          const start = headerEnd + 4;
+          if (!match) { buf = buf.slice(start); continue; }
+          const length = Number(match[1]);
+          if (buf.length < start + length) break;
+          pending = buf.slice(start, start + length);
+          buf = buf.slice(start + length);
+          drawLatest();
+        }
+      }
+    }
+
+    async function streamLoop() {
+      while (!paused) {
+        streamAbort = new AbortController();
+        try {
+          await readStream(streamAbort.signal);
+        } catch (error) {
+          if (error.name === "AbortError" && paused) return;
+        }
+        if (!paused) await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+
+    function restartStream() {
+      if (streamAbort) streamAbort.abort();
+      streamAbort = null;
+    }
+
+    setInterval(() => {
+      fps = frameCount;
+      frameCount = 0;
+      const stale = performance.now() - lastFrameAt > 5000;
+      if (paused) return;
+      if (stale) {
+        video.hidden = true;
+        novideo.hidden = false;
+        camTime.textContent = "";
+        setStatus("camera", false, lastFrameAt ? "Feed interrupted" : "No frame yet");
+        if (lastFrameAt && streamAbort) restartStream();
+      } else {
+        camTime.textContent = fps + " fps · " + new Date().toLocaleTimeString();
+        setStatus("camera", true, "Receiving " + fps + " fps");
+      }
+    }, 1000);
+
+    const pauseBtn = document.getElementById("cam-pause");
+    pauseBtn.addEventListener("click", () => {
+      paused = !paused;
+      pauseBtn.innerHTML = UI.icon(paused ? "play" : "pause");
+      pauseBtn.setAttribute("aria-label", paused ? "Resume feed" : "Pause feed");
+      pauseBtn.title = paused ? "Resume feed" : "Pause feed";
+      document.getElementById("cam-badge").classList.toggle("is-paused", paused);
+      document.getElementById("cam-badge-text").textContent = paused ? "PAUSED" : "LIVE";
+      if (paused) {
+        restartStream();
+        camTime.textContent = "";
+      } else {
+        streamLoop();
+      }
+    });
+
+    document.getElementById("cam-snap").addEventListener("click", () => {
+      if (video.hidden) { UI.toast("No frame to save yet", { icon: "info" }); return; }
+      video.toBlob((blob) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "parkpatrol-" + new Date().toISOString().replace(/[:.]/g, "-") + ".jpg";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        UI.toast("Snapshot saved");
+      }, "image/jpeg", 0.92);
+    });
+
+    document.getElementById("cam-full").addEventListener("click", () => {
+      const box = document.getElementById("camera-box");
+      const request = box.requestFullscreen || box.webkitRequestFullscreen;
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (request) request.call(box);
+      else UI.toast("Full screen isn't supported on this device", { icon: "info" });
+    });
+
+    refreshState();
+    streamLoop();
+    setInterval(refreshState, 2000);
+  </script>
+</body>
+</html>

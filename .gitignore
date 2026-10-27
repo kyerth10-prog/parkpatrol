@@ -1,0 +1,18 @@
+# Secrets and local data
+.env
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Tools and editors
+tools/
+.idea/
+.DS_Store
+*.tmp
+
+# Impeccable session scratch (the backup is superseded by git history)
+.impeccable/backup-pre-redesign/
+.impeccable/questions/

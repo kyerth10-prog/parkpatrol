@@ -1,0 +1,621 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T00:14:01+00:00",
+  "title": "Design System: Park Patrol",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "ground-subtle": {
+        "role": "neutral",
+        "displayName": "Ground Subtle",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "ground-muted": {
+        "role": "neutral",
+        "displayName": "Ground Muted",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ]
+      },
+      "lamp-green": {
+        "role": "primary",
+        "displayName": "Lamp Green",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "lamp-green-bright": {
+        "role": "primary",
+        "displayName": "Bright Lamp Green",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "green-ink": {
+        "role": "primary",
+        "displayName": "Green Ink",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "green-ink-hover": {
+        "role": "primary",
+        "displayName": "Green Ink Hover",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "green-deep": {
+        "role": "primary",
+        "displayName": "Deep Green",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "green-tint": {
+        "role": "primary",
+        "displayName": "Green Tint",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "green-tint-2": {
+        "role": "primary",
+        "displayName": "Green Tint 2",
+        "tonalRamp": [
+          "#0e4f28",
+          "#116a33",
+          "#15803d",
+          "#16a34a",
+          "#3fcf73",
+          "#a6ecc0",
+          "#cff5dd",
+          "#ecfdf3"
+        ]
+      },
+      "lamp-off": {
+        "role": "neutral",
+        "displayName": "Lamp Off",
+        "tonalRamp": [
+          "#0f1712",
+          "#36413b",
+          "#5d6963",
+          "#6c7771",
+          "#d3d9d5",
+          "#e6eae7",
+          "#f0f3f1",
+          "#ffffff"
+        ],
+        "note": "Same value as hairline-strong by design: a taken bay is an unlit bulb."
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Signal Amber",
+        "tonalRamp": [
+          "#5a2d05",
+          "#a8540a",
+          "#c96f0a",
+          "#e08a0b",
+          "#fbd38d",
+          "#f7d9a8",
+          "#fde7c2",
+          "#fff6e8"
+        ]
+      },
+      "amber-ink": {
+        "role": "secondary",
+        "displayName": "Amber Ink",
+        "tonalRamp": [
+          "#5a2d05",
+          "#a8540a",
+          "#c96f0a",
+          "#e08a0b",
+          "#fbd38d",
+          "#f7d9a8",
+          "#fde7c2",
+          "#fff6e8"
+        ]
+      },
+      "amber-tint": {
+        "role": "secondary",
+        "displayName": "Amber Tint",
+        "tonalRamp": [
+          "#5a2d05",
+          "#a8540a",
+          "#c96f0a",
+          "#e08a0b",
+          "#fbd38d",
+          "#f7d9a8",
+          "#fde7c2",
+          "#fff6e8"
+        ]
+      },
+      "amber-line": {
+        "role": "secondary",
+        "displayName": "Amber Line",
+        "tonalRamp": [
+          "#5a2d05",
+          "#a8540a",
+          "#c96f0a",
+          "#e08a0b",
+          "#fbd38d",
+          "#f7d9a8",
+          "#fde7c2",
+          "#fff6e8"
+        ]
+      },
+      "red": {
+        "role": "tertiary",
+        "displayName": "Alarm Red",
+        "tonalRamp": [
+          "#5c110b",
+          "#8a1a12",
+          "#b42318",
+          "#dc2626",
+          "#f0706a",
+          "#f9b4af",
+          "#fde0de",
+          "#fef3f2"
+        ]
+      },
+      "red-ink": {
+        "role": "tertiary",
+        "displayName": "Red Ink",
+        "tonalRamp": [
+          "#5c110b",
+          "#8a1a12",
+          "#b42318",
+          "#dc2626",
+          "#f0706a",
+          "#f9b4af",
+          "#fde0de",
+          "#fef3f2"
+        ]
+      },
+      "red-tint": {
+        "role": "tertiary",
+        "displayName": "Red Tint",
+        "tonalRamp": [
+          "#5c110b",
+          "#8a1a12",
+          "#b42318",
+          "#dc2626",
+          "#f0706a",
+          "#f9b4af",
+          "#fde0de",
+          "#fef3f2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Sign Numeral",
+        "purpose": "Entrance-sign free-spot count only; green when free, ink-2 when full."
+      },
+      "headline": {
+        "displayName": "Status Headline",
+        "purpose": "The sign's status line."
+      },
+      "metric": {
+        "displayName": "KPI Value",
+        "purpose": "Admin KPI numbers; 28px under 760px."
+      },
+      "title": {
+        "displayName": "Panel Title",
+        "purpose": "Panel headings; sheets 20px, admin top bar 18px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default copy."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Subtitles, legends, help text, table cells (13-14px)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Pills, table headers, sidebar section labels; sentence case."
+      },
+      "data": {
+        "displayName": "Data Mono",
+        "purpose": "Martian Mono for spot IDs, times, counts only; 11-12px, tabular."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgba(15, 23, 18, .05)",
+        "purpose": "Control lift on secondary buttons, bordered icon buttons, search."
+      },
+      {
+        "name": "shadow-pop",
+        "value": "0 16px 40px -12px rgba(15, 23, 18, .22), 0 2px 6px rgba(15, 23, 18, .06)",
+        "purpose": "Floating layers: sheets, menu, toasts, mobile drawer."
+      },
+      {
+        "name": "segment-thumb",
+        "value": "0 1px 3px rgba(15, 23, 18, .12), 0 0 0 1px rgba(15, 23, 18, .04)",
+        "purpose": "Segmented control thumb."
+      },
+      {
+        "name": "button-primary",
+        "value": "0 1px 2px rgba(14, 79, 40, .25), inset 0 1px 0 rgba(255, 255, 255, .12)",
+        "purpose": "Primary button lift and faint top highlight."
+      },
+      {
+        "name": "lamp-halo",
+        "value": "0 0 0 5px var(--green-tint)",
+        "purpose": "Flat unblurred ring around a lit lamp (amber #fde7c2 for violation)."
+      },
+      {
+        "name": "focus-field",
+        "value": "0 0 0 3px var(--green-tint-2)",
+        "purpose": "Search field focus ring with green border."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Default easing for all state transitions and entrances."
+      },
+      {
+        "name": "lamp-on",
+        "value": "1.1s ease-out; scale .85 -> 1.12 -> 1 with 14px green spread ring bloom",
+        "purpose": "Bay switches on when it frees up."
+      },
+      {
+        "name": "lamp-off",
+        "value": ".6s ease-out; scale 1.1 -> 1",
+        "purpose": "Bay switches off."
+      },
+      {
+        "name": "lamp-warn",
+        "value": "1.4s ease-in-out infinite; ring to 9px amber",
+        "purpose": "Violation lamp and map spot pulse."
+      },
+      {
+        "name": "live-ping",
+        "value": "2s ease-out infinite",
+        "purpose": "Live indicator ring."
+      },
+      {
+        "name": "micro",
+        "value": ".15s",
+        "purpose": "Hover colour and border transitions."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "all animation and transition durations .001ms",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "admin-stack",
+        "value": "1200px"
+      },
+      {
+        "name": "drawer",
+        "value": "1024px"
+      },
+      {
+        "name": "sign-wrap",
+        "value": "960px"
+      },
+      {
+        "name": "tabbar",
+        "value": "760px"
+      },
+      {
+        "name": "bottom-sheet",
+        "value": "640px"
+      },
+      {
+        "name": "compact",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one green action per area.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">View lot map</button>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 16px; border:1px solid var(--line-strong, #d3d9d5); border-radius:8px; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:background-color .15s, border-color .15s, transform .15s cubic-bezier(.16,1,.3,1); } .ds-btn:active { transform:translateY(1px); } .ds-btn:focus-visible { outline:2px solid #16a34a; outline-offset:2px; } .ds-btn-primary { background:#15803d; border-color:#15803d; color:#fff; box-shadow:0 1px 2px rgba(14,79,40,.25), inset 0 1px 0 rgba(255,255,255,.12); } .ds-btn-primary:hover { background:#116a33; border-color:#116a33; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default white bordered button.",
+      "html": "<button class=\"ds-btn2\">Notify me</button>",
+      "css": ".ds-btn2 { display:inline-flex; align-items:center; height:40px; padding:0 16px; border:1px solid #d3d9d5; border-radius:8px; background:#fff; color:#0f1712; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; font-weight:500; cursor:pointer; box-shadow:0 1px 2px rgba(15,23,18,.05); transition:background-color .15s, border-color .15s; } .ds-btn2:hover { background:#f7f9f8; border-color:#c4cbc7; } .ds-btn2:active { transform:translateY(1px); } .ds-btn2:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }"
+    },
+    {
+      "name": "Soft Button",
+      "kind": "button",
+      "refersTo": "button-soft",
+      "description": "Green tint secondary action.",
+      "html": "<button class=\"ds-btn-soft\">Subscribe</button>",
+      "css": ".ds-btn-soft { height:40px; padding:0 16px; border:0; border-radius:8px; background:#ecfdf3; color:#15803d; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:background-color .15s; } .ds-btn-soft:hover { background:#cff5dd; } .ds-btn-soft:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }"
+    },
+    {
+      "name": "Bay Lamp",
+      "kind": "custom",
+      "refersTo": "lamp",
+      "description": "Signature bay indicator: available, taken, violation.",
+      "html": "<div class=\"ds-lamps\"><button class=\"ds-lamp ds-on\"><span class=\"ds-light\"></span><span class=\"ds-id\">A1</span></button><button class=\"ds-lamp ds-off\"><span class=\"ds-light\"></span><span class=\"ds-id\">A2</span></button><button class=\"ds-lamp ds-warn\"><span class=\"ds-light\"></span><span class=\"ds-id\">A3</span><span class=\"ds-meta\">4m</span></button></div>",
+      "css": ".ds-lamps { display:grid; grid-template-columns:repeat(3, 56px); gap:8px; } .ds-lamp { display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0 12px; border:1px solid #e6eae7; border-radius:12px; background:#fff; cursor:pointer; transition:border-color .2s, background-color .2s, transform .2s cubic-bezier(.16,1,.3,1); } .ds-lamp:hover { background:#f7f9f8; border-color:#d3d9d5; transform:translateY(-1px); } .ds-lamp:focus-visible { outline:2px solid #16a34a; outline-offset:2px; } .ds-light { width:20px; height:20px; border-radius:50%; background:#f0f3f1; box-shadow:inset 0 0 0 1.5px #d3d9d5; } .ds-id, .ds-meta { font-family:'Martian Mono', ui-monospace, monospace; font-size:11px; font-weight:500; letter-spacing:-.03em; line-height:1; color:#36413b; } .ds-meta { color:#5d6963; } .ds-on .ds-light { background:#16a34a; box-shadow:0 0 0 5px #ecfdf3; } .ds-on .ds-id { color:#0e4f28; } .ds-off .ds-light { background:#d3d9d5; box-shadow:none; } .ds-off .ds-id { color:#5d6963; } .ds-warn { border-color:#f7d9a8; background:#fff6e8; } .ds-warn .ds-light { background:#e08a0b; box-shadow:0 0 0 5px #fde7c2; animation:ds-warn 1.4s ease-in-out infinite; } .ds-warn .ds-id, .ds-warn .ds-meta { color:#a8540a; } @keyframes ds-warn { 50% { box-shadow:0 0 0 9px rgba(224,138,11,.16); } } @media (prefers-reduced-motion: reduce) { .ds-warn .ds-light { animation:none; } }"
+    },
+    {
+      "name": "Live Indicator",
+      "kind": "chip",
+      "refersTo": "pill-ok",
+      "description": "Connection freshness pill with pinging dot.",
+      "html": "<span class=\"ds-live\"><span class=\"ds-dot\"></span>Live · 8:10 AM</span>",
+      "css": ".ds-live { display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 10px; border-radius:99px; background:#ecfdf3; color:#15803d; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:12.5px; font-weight:500; font-variant-numeric:tabular-nums; } .ds-dot { position:relative; width:7px; height:7px; border-radius:50%; background:#16a34a; } .ds-dot::after { content:''; position:absolute; inset:-3px; border-radius:50%; border:1.5px solid #16a34a; opacity:0; animation:ds-ping 2s cubic-bezier(.16,1,.3,1) infinite; } @keyframes ds-ping { 0% { transform:scale(.6); opacity:.9; } 80%,100% { transform:scale(1.9); opacity:0; } } @media (prefers-reduced-motion: reduce) { .ds-dot::after { animation:none; } }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Event filter; selected inverts to ink.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">All <span>30</span></button> <button class=\"ds-chip\" aria-pressed=\"false\">Violations <span>2</span></button>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 11px; border:1px solid #d3d9d5; border-radius:99px; background:#fff; color:#36413b; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:background-color .15s, border-color .15s, color .15s; } .ds-chip span { font-family:'Martian Mono', ui-monospace, monospace; font-size:11px; color:#6c7771; } .ds-chip:hover { background:#f7f9f8; } .ds-chip[aria-pressed='true'] { background:#0f1712; border-color:#0f1712; color:#fff; } .ds-chip[aria-pressed='true'] span { color:#a9b5ae; } .ds-chip:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Admin search with keyboard hint.",
+      "html": "<label class=\"ds-search\"><input type=\"search\" placeholder=\"Search spots or events\"><kbd>/</kbd></label>",
+      "css": ".ds-search { display:flex; align-items:center; gap:8px; width:280px; height:40px; padding:0 10px 0 12px; border:1px solid #d3d9d5; border-radius:8px; background:#fff; box-shadow:0 1px 2px rgba(15,23,18,.05); transition:border-color .15s, box-shadow .15s; } .ds-search:focus-within { border-color:#16a34a; box-shadow:0 0 0 3px #cff5dd; } .ds-search input { flex:1; min-width:0; border:0; outline:0; background:none; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; color:#0f1712; caret-color:#16a34a; } .ds-search input::placeholder { color:#6c7771; } .ds-search kbd { padding:1px 6px; border:1px solid #d3d9d5; border-radius:5px; background:#f7f9f8; font-family:'Martian Mono', ui-monospace, monospace; font-size:11px; color:#5d6963; }"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "navlink",
+      "description": "Admin sidebar links; active is green tint.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-navlink is-active\" href=\"#\">Dashboard</a><a class=\"ds-navlink\" href=\"#\">Camera</a><a class=\"ds-navlink\" href=\"#\">Events</a></nav>",
+      "css": ".ds-nav { display:flex; flex-direction:column; gap:2px; width:224px; } .ds-navlink { display:flex; align-items:center; height:36px; padding:0 10px; border-radius:8px; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; font-weight:500; color:#36413b; text-decoration:none; transition:background-color .15s, color .15s; } .ds-navlink:hover { background:#f0f3f1; color:#0f1712; } .ds-navlink.is-active { background:#ecfdf3; color:#0e4f28; } .ds-navlink:focus-visible { outline:2px solid #16a34a; outline-offset:2px; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat white hairline container with head.",
+      "html": "<section class=\"ds-panel\"><h2>Lot layout</h2><p>Tap a spot to see its details</p></section>",
+      "css": ".ds-panel { background:#fff; border:1px solid #e6eae7; border-radius:16px; padding:24px; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; } .ds-panel h2 { margin:0; font-size:17px; font-weight:600; letter-spacing:-.02em; color:#0f1712; } .ds-panel p { margin:2px 0 0; font-size:13px; color:#5d6963; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Ink confirmation toast with green icon.",
+      "html": "<div class=\"ds-toast\"><span class=\"ds-ti\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12l5 5L20 7\"/></svg></span>Link copied</div>",
+      "css": ".ds-toast { display:inline-flex; align-items:center; gap:10px; padding:10px 16px 10px 12px; border-radius:12px; background:#0f1712; color:#fff; font-family:'Onest', ui-sans-serif, system-ui, sans-serif; font-size:14px; font-weight:500; box-shadow:0 16px 40px -12px rgba(15,23,18,.22), 0 2px 6px rgba(15,23,18,.06); } .ds-ti { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:rgba(63,207,115,.18); color:#3fcf73; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Entrance Sign",
+    "overview": "Every bay is a light, the way green-over-open indicators work in Philippine mall car parks, and the page itself is the sign at the lot entrance. The guest reads one huge green numeral and a row of eighteen lamps; security reads the same lamps at higher density, inside a sidebar console. One system serves both audiences: same palette, same lamp, same hairline panels, with the admin side adding amber violation states, KPIs, a camera, and an events table.\n\nThe material is white ground, ink text, and 1px hairlines. Panels are flat white with generous rounding; depth is reserved for things that float (sheets, menus, toasts). Colour is spent almost entirely on state: green means a bay is open, an unlit grey lamp means taken, amber means a violation, and red appears only as a count badge and destructive menu items. The type is Onest throughout, with Martian Mono reserved for machine values (spot IDs, times, counts).\n\nThe system rejects the KPI-tile dashboard: no icon squares, no gradient cards, no tinted card heads. The admin KPIs are plain hairline panels with a number, a label, and a meter.",
+    "keyCharacteristics": [
+      "White ground, ink text, one green family; amber only for violations.",
+      "The bay lamp is the signature unit, repeated on guest, admin, legend dots, map, and spot detail.",
+      "Flat hairline panels (1px, 12–20px radii); shadows only on floating layers.",
+      "Onest for everything a person reads; Martian Mono only for IDs, times, and counts.",
+      "Motion is a state signal: lamps switch on, numbers pop, violations pulse. All of it is disabled under reduced motion."
+    ],
+    "rules": [
+      {
+        "name": "The Light Means Open Rule",
+        "body": "Green belongs to availability. A green fill or lamp always means \"a bay is open\" or \"this is the action\". Never use it as a neutral accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dead Bulb Rule",
+        "body": "Taken is grey (lamp-off), never red. Red is for alarms (badge, destructive action), not for ordinary occupancy.",
+        "section": "colors"
+      },
+      {
+        "name": "The Amber Is Admin Rule",
+        "body": "Amber appears only on admin surfaces (violations, the alert KPI, the warning banner). Offline and no-data states use neutral grey (bg-muted ground, faint dot), never amber.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is Data Rule",
+        "body": "Martian Mono is for values a machine produced (IDs, times, counts). Headings, labels, buttons, and prose are always Onest.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Big Number Rule",
+        "body": "The display size exists for one numeral per surface: the free-spot count. Nothing else gets that scale.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float Only Rule",
+        "body": "A shadow means \"this sits above the page\". Resting panels and cards never get one; they get a hairline.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Flat Lamp Rule",
+        "body": "Lamps are flat discs with a solid spread ring. No blur, gradients, or inner highlights. The switch-on bloom is a moving spread ring that settles back to flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** express bay status through the lamp: Lamp Green disc with a Green Tint ring for open, a solid Lamp Off disc for taken, an amber pulse for a violation. Always pair it with a text label (legend, pill, or ID colour).",
+      "**Do** keep resting surfaces flat white with a 1px Hairline (#e6eae7) and a 12–20px radius.",
+      "**Do** use Green Ink (#15803d) for green text and solid green buttons, and Lamp Green (#16a34a) for lights, meters, and focus.",
+      "**Do** set IDs, times, and counts in Martian Mono with tabular figures and -0.03em tracking.",
+      "**Do** reserve shadows for floating layers (sheets, menus, toasts, drawer).",
+      "**Do** gate all motion behind prefers-reduced-motion. The stylesheet collapses every animation and transition to near zero."
+    ],
+    "donts": [
+      "**Don't** build KPI-tile dashboards with icon squares, gradient cards, or tinted card heads. KPIs are plain hairline panels.",
+      "**Don't** show a taken bay in red. Red is for the alert badge and destructive actions only.",
+      "**Don't** show amber or violation states on guest surfaces.",
+      "**Don't** add blur glows, gradients, or inner highlights to lamps. Lamps are flat.",
+      "**Don't** use Martian Mono for headings, labels, buttons, or prose.",
+      "**Don't** introduce a second accent hue. The palette is one green family plus amber and red as status."
+    ]
+  }
+}

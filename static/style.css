@@ -1,0 +1,36 @@
+:root {
+  --bg: #ffffff; --fg: #1f1f1c; --muted: #6b6a64; --card: #f5f4ef; --border: #dedcd2;
+  --ok: #3b8a2e; --taken: #c4382f; --warn: #d98a14; --unknown: #8e8d87;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1c1c1a; --fg: #ecebe4; --muted: #a3a198; --card: #262624; --border: #3c3c38; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+header.top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0; }
+h2 { font-size: 16px; font-weight: 500; margin: 0 0 8px; }
+a { color: inherit; }
+.muted { color: var(--muted); font-size: 14px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+.counters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+.counter { text-align: center; }
+.counter b { display: block; font-size: 28px; font-weight: 500; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 14px; color: var(--muted); }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.banner { background: #fbe9e7; color: #7a1f14; border: 1px solid #e8b4ab; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+svg { width: 100%; height: auto; display: block; }
+.band { fill: #8e8d87; } .asphalt { fill: #3a3a38; } .island { fill: #4f7a1e; stroke: #f4f2ea; stroke-width: 1.5; }
+.spot { stroke: #f4f2ea; stroke-width: 1.5; fill: var(--unknown); }
+.spot.available { fill: var(--ok); } .spot.taken { fill: var(--taken); } .spot.violation { fill: var(--warn); }
+.spot-label { fill: #fff; font-size: 11px; font-weight: 500; pointer-events: none; }
+.video { width: 100%; border-radius: 8px; background: #000; min-height: 120px; }
+.novideo { color: var(--muted); padding: 40px 0; text-align: center; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; }
+.sw-ok { background: var(--ok); } .sw-taken { background: var(--taken); } .sw-warn { background: var(--warn); }

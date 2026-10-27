@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Live parking availability at De La Salle Lipa.">
+  <title>Park Patrol · DLSL Parking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/static/ui.css?v=7">
+</head>
+<body class="guest has-tabbar">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- App bar -->
+  <header class="appbar js-elevate">
+    <div class="container appbar__inner">
+      <a class="brand" href="/" aria-label="Park Patrol home">
+        <svg class="brand__mark" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#0f1712"/><path d="M10.5 20V8.5h4.25a3.75 3.75 0 0 1 0 7.5H10.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20.5" cy="20.5" r="3" fill="#3fcf73"/></svg>
+        <span class="brand__text"><b>Park Patrol</b><small>De La Salle Lipa</small></span>
+      </a>
+
+      <nav class="topnav js-spy" aria-label="Sections">
+        <a href="#overview">Overview</a>
+        <a href="#map">Lot map</a>
+        <a href="#help">Help</a>
+      </nav>
+
+      <div class="appbar__actions">
+        <span class="live" id="live" title="Live connection">
+          <span class="live__dot" aria-hidden="true"></span>
+          <span id="note">Connecting…</span>
+        </span>
+        <a class="btn btn--ghost btn--sm hide-sm" href="/login">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#login"></use></svg>
+          Admin
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="container page">
+
+    <!-- Entrance sign -->
+    <section id="overview" class="sign" aria-labelledby="hero-title">
+      <div class="sign__top">
+        <div class="sign__count">
+          <span class="sign__num skeleton" id="free" aria-describedby="free-unit">00</span>
+          <span class="sign__unit" id="free-unit">spots free in <b>Lot A</b></span>
+        </div>
+
+        <div class="sign__body">
+          <h1 id="hero-title"><span id="status-word">Checking the lot…</span></h1>
+          <p id="count">Checking spots…</p>
+          <div class="sign__meter">
+            <div class="meter" role="meter" aria-label="Spots available" aria-valuemin="0" aria-valuemax="100" id="meter">
+              <span class="meter__fill" id="meter-fill"></span>
+            </div>
+            <span class="tnum" id="capacity">— total</span>
+          </div>
+        </div>
+
+        <div class="sign__actions">
+          <a class="btn btn--primary btn--lg" href="#map">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>
+            View lot map
+          </a>
+          <div class="row">
+            <button class="btn btn--lg" type="button" data-notify>
+              <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>
+              Notify me
+            </button>
+            <button class="icon-btn icon-btn--bordered icon-btn--lg" type="button" id="share" aria-label="Share this page">
+              <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#share"></use></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sign__lamps">
+        <div class="sign__lamps-head">
+          <h2>Every spot, live</h2>
+          <div class="legend">
+            <span><span class="dot dot--ok"></span>Available <b class="tnum" id="s-free">–</b></span>
+            <span><span class="dot dot--taken"></span>Taken <b class="tnum" id="s-taken">–</b></span>
+            <span class="hide-sm">Occupancy <b class="tnum" id="s-occ">–</b></span>
+          </div>
+        </div>
+        <div class="lamps" id="lamps" role="group" aria-label="Spots A1 to A18"></div>
+      </div>
+    </section>
+
+    <div class="guest-grid">
+      <!-- Lot map -->
+      <section id="map" class="panel map-panel" aria-labelledby="map-title">
+        <div class="panel__head">
+          <div class="panel__title">
+            <h2 id="map-title">Lot layout</h2>
+            <p>Tap a spot to see its details</p>
+          </div>
+          <div class="panel__tools">
+            <div class="segmented" id="view-toggle" role="group" aria-label="View">
+              <span class="segmented__thumb" aria-hidden="true"></span>
+              <button type="button" aria-pressed="true" data-value="map">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Map
+              </button>
+              <button type="button" aria-pressed="false" data-value="list">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#grid"></use></svg>List
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="lot" class="lot is-loading"></div>
+        <div id="spot-list" class="spot-grid" hidden></div>
+
+        <div class="panel__foot">
+          <div class="legend">
+            <span><span class="dot dot--ok"></span>Available</span>
+            <span><span class="dot dot--taken"></span>Taken</span>
+            <span><span class="dot dot--unknown"></span>No data</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Help -->
+      <section id="help" class="panel help" aria-labelledby="help-title">
+        <h2 id="help-title">Good to know</h2>
+        <p>Park smarter around campus.</p>
+        <ul class="help-list">
+          <li class="help-item">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#video"></use></svg>
+            <div>
+              <h3>How it works</h3>
+              <p>A camera watches the lot and updates this page every few seconds. Green means the spot is open right now.</p>
+            </div>
+          </li>
+          <li class="help-item">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#shield"></use></svg>
+            <div>
+              <h3>Parking rules</h3>
+              <p>Park inside the lines and never double-park. Violations are flagged to campus security automatically.</p>
+              <button class="link-btn" type="button" data-soon="Full parking guidelines">
+                Read guidelines
+                <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#chevron-right"></use></svg>
+              </button>
+            </div>
+          </li>
+          <li class="help-item">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#phone"></use></svg>
+            <div>
+              <h3>Need help?</h3>
+              <p>Blocked in or spotted a problem? Reach the security office directly.</p>
+              <button class="link-btn" type="button" data-soon="Contact security">
+                Contact security
+                <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#chevron-right"></use></svg>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© De La Salle Lipa · Park Patrol</span>
+      <nav aria-label="Footer">
+        <a href="#help">Help</a>
+        <a href="#" data-soon="Privacy notice">Privacy</a>
+        <a href="/login">Admin sign in</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Tab bar -->
+  <nav class="tabbar js-spy" aria-label="Sections">
+    <a href="#overview"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#home"></use></svg>Overview</a>
+    <a href="#map"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Map</a>
+    <a href="#help"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#info"></use></svg>Help</a>
+    <a href="/login"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Admin</a>
+  </nav>
+
+  <!-- Spot sheet -->
+  <div class="sheet" id="spot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet__scrim" data-sheet-close></div>
+    <div class="sheet__panel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
+      </button>
+      <div class="spot-detail">
+        <div class="spot-detail__head">
+          <span class="spot-detail__id" id="sheet-id">A1</span>
+          <div>
+            <h3 id="sheet-title">Spot A1</h3>
+            <span class="pill" id="sheet-status">—</span>
+          </div>
+        </div>
+        <p class="muted" id="sheet-text"></p>
+        <div class="spot-detail__actions">
+          <button class="btn btn--primary" type="button" data-soon="Directions to this spot">
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#navigation"></use></svg>
+            Directions
+          </button>
+          <button class="btn" type="button" data-notify>
+            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>
+            Alert me
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notify sheet -->
+  <div class="sheet" id="notify-sheet" role="dialog" aria-modal="true" aria-labelledby="notify-title">
+    <div class="sheet__scrim" data-sheet-close></div>
+    <div class="sheet__panel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
+      </button>
+      <div class="notify">
+        <span class="notify__mark"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg></span>
+        <h3 id="notify-title">Get notified when a spot opens</h3>
+        <p class="muted">When Lot A is full, we'll message you on Telegram the moment a spot frees up. Free, no sign-up. Send <b>/stop</b> anytime to unsubscribe.</p>
+        <div class="qr hide-sm" id="notify-qr" aria-label="QR code to subscribe on Telegram"></div>
+        <p class="muted notify__hint hide-sm">Scan with your phone camera</p>
+        <a class="btn btn--primary btn--block btn--lg" id="notify-link" href="#" target="_blank" rel="noopener">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#navigation"></use></svg>
+          Open Telegram
+        </a>
+        <p class="notify__fine">We only receive your Telegram chat ID: no name, email or phone number.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/ui.js?v=7"></script>
+  <script src="/static/lot.js?v=7"></script>
+  <script>
+    const lotEl = document.getElementById("lot");
+    const lot = LOT.render(lotEl);
+    const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
+    const note = document.getElementById("note");
+    const live = document.getElementById("live");
+    const count = document.getElementById("count");
+    const listEl = document.getElementById("spot-list");
+    let spots = {};
+    let selected = null;
+    let wasOffline = false;
+
+    const WORD = { available: "Available", taken: "Taken" };
+
+    async function refresh() {
+      try {
+        const res = await fetch("/api/spots", { cache: "no-store" });
+        if (!res.ok) throw new Error("bad response");
+        spots = await res.json();
+        lot.update(spots);
+        lamps.update(spots, {}, { available: "available", taken: "taken" });
+
+        const values = Object.values(spots);
+        const total = values.length;
+        const free = values.filter((s) => s === "available").length;
+        const pct = total ? Math.round((free / total) * 100) : 0;
+
+        const freeEl = document.getElementById("free");
+        UI.count(freeEl, free);
+        freeEl.classList.toggle("is-full", free === 0);
+        UI.count(document.getElementById("s-free"), free);
+        UI.count(document.getElementById("s-taken"), total - free);
+        UI.count(document.getElementById("s-occ"), 100 - pct, { suffix: "%" });
+        count.textContent = free + " of " + total + " spots are open right now";
+        document.getElementById("capacity").textContent = pct + "% free · " + total + " total";
+
+        const fill = document.getElementById("meter-fill");
+        fill.style.width = pct + "%";
+        fill.classList.toggle("is-mid", pct <= 50 && pct > 20);
+        fill.classList.toggle("is-low", pct <= 20);
+        document.getElementById("meter").setAttribute("aria-valuenow", pct);
+        document.getElementById("status-word").textContent =
+          free === 0 ? "Lot is full" : pct <= 20 ? "Almost full" : pct <= 50 ? "Filling up" : "Plenty of space";
+
+        note.textContent = "Live · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        live.classList.remove("is-offline");
+        if (wasOffline) UI.toast("Back online");
+        wasOffline = false;
+
+        renderList();
+        if (selected) fillSheet(selected);
+      } catch (error) {
+        note.textContent = "Reconnecting…";
+        live.classList.add("is-offline");
+        if (!wasOffline) UI.toast("Connection lost. Retrying…", { icon: "alert", tone: "warn" });
+        wasOffline = true;
+      }
+    }
+
+    // List view
+    function renderList() {
+      if (listEl.hidden) return;
+      if (!listEl.children.length) {
+        listEl.append(...lot.ids.map((id, i) => {
+          const tile = document.createElement("button");
+          tile.type = "button";
+          tile.dataset.spot = id;
+          tile.style.animationDelay = i * 20 + "ms";
+          tile.innerHTML = "<b></b><span><span class='dot'></span><i></i></span>";
+          tile.querySelector("b").textContent = id;
+          return tile;
+        }));
+      }
+      for (const tile of listEl.children) {
+        const state = spots[tile.dataset.spot] || "";
+        tile.className = "spot-tile " + state;
+        tile.querySelector(".dot").className = "dot " + (state === "available" ? "dot--ok" : state === "taken" ? "dot--taken" : "dot--unknown");
+        tile.querySelector("i").textContent = WORD[state] || "No data";
+      }
+    }
+
+    document.getElementById("view-toggle").addEventListener("change", (e) => {
+      const list = e.detail === "list";
+      lotEl.hidden = list;
+      listEl.hidden = !list;
+      listEl.replaceChildren();
+      renderList();
+    });
+
+    // Spot details
+    function fillSheet(id) {
+      const state = spots[id] || "";
+      const badge = document.getElementById("sheet-id");
+      badge.textContent = id;
+      badge.className = "spot-detail__id " + state;
+      document.getElementById("sheet-title").textContent = "Spot " + id;
+      const pill = document.getElementById("sheet-status");
+      pill.textContent = WORD[state] || "No data";
+      pill.className = "pill " + (state === "available" ? "pill--ok" : state === "taken" ? "pill--taken" : "pill--muted");
+      document.getElementById("sheet-text").textContent =
+        state === "available" ? "This spot is open. Head over before someone else takes it!"
+        : state === "taken" ? "This spot is occupied right now. We'll keep this updated live."
+        : "We haven't received data for this spot yet.";
+    }
+
+    function selectSpot(id) {
+      selected = id;
+      lot.select(id);
+      lamps.select(id);
+    }
+
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-spot]");
+      if (!target) return;
+      selectSpot(target.dataset.spot);
+      fillSheet(selected);
+      UI.sheet.open("spot-sheet");
+    });
+    document.getElementById("spot-sheet").addEventListener("sheet:close", () => selectSpot(null));
+
+    // Share
+    document.getElementById("share").addEventListener("click", async () => {
+      const data = { title: "Park Patrol · DLSL", text: "Check live parking at De La Salle Lipa", url: location.origin + "/" };
+      try {
+        if (navigator.share) { await navigator.share(data); return; }
+        await navigator.clipboard.writeText(data.url);
+        UI.toast("Link copied to clipboard");
+      } catch (err) {
+        if (err && err.name !== "AbortError") UI.toast("Couldn't share the link", { icon: "alert", tone: "warn" });
+      }
+    });
+
+    // Notifications
+    let notifyLink = null;
+    fetch("/api/notify", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => { notifyLink = d.telegram_link; })
+      .catch(() => {});
+
+    function loadQrLibrary() {
+      if (window.QRCode) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    document.addEventListener("click", async (e) => {
+      if (!e.target.closest("[data-notify]")) return;
+      if (!notifyLink) { UI.toast("Spot alerts aren't available right now", { icon: "info" }); return; }
+      UI.sheet.close("spot-sheet");
+      document.getElementById("notify-link").href = notifyLink;
+      UI.sheet.open("notify-sheet");
+      const qr = document.getElementById("notify-qr");
+      if (qr.dataset.for === notifyLink) return;
+      try {
+        await loadQrLibrary();
+        qr.replaceChildren();
+        new QRCode(qr, { text: notifyLink, width: 176, height: 176, colorDark: "#0f1712", colorLight: "#ffffff" });
+        qr.dataset.for = notifyLink;
+      } catch (err) {
+        qr.hidden = true;
+      }
+    });
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>

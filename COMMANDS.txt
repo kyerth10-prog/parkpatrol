@@ -1,0 +1,83 @@
+ PARK PATROL - COMMANDS
+Run all commands from the project folder (parkpatrol-server).
+
+
+SETUP (first time only)
+-----------------------
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/setup_env.py
+python scripts/telegram_setup.py
+tools/ngrok config add-authtoken YOUR_NGROK_TOKEN
+
+
+RUN
+---
+Activate environment:       source .venv/bin/activate
+Start server (local):       python main.py
+Start server + public URL:  ./scripts/start_public.sh
+Start camera feed:          python scripts/send_frame.py
+Simulate tracker:           python scripts/test_tracker.py
+Notification demo:          python scripts/demo_notify.py
+
+
+STOP
+----
+Stop a running command:     Ctrl + C
+Stop server and tunnel:     pkill -f main.py; pkill -f "ngrok http"
+
+
+ADDRESSES
+---------
+Guest page:     https://footpath-human-implosion.ngrok-free.dev
+Admin page:     https://footpath-human-implosion.ngrok-free.dev/admin
+Local:          http://localhost:8000
+Local admin:    http://localhost:8000/admin   (smoothest video, no internet data)
+
+
+CAMERA STREAM (LAPTOP B - WINDOWS)
+----------------------------------
+1. Download and unzip MediaMTX:
+   https://github.com/bluenviron/mediamtx/releases/download/v1.21.2/mediamtx_v1.21.2_windows_amd64.zip
+2. Run mediamtx.exe (allow access on Private networks when Windows Firewall asks)
+3. OBS > Settings > Stream
+     Service:     Custom...
+     Server:      rtmp://localhost/
+     Stream Key:  lot
+4. OBS > Settings > Output (Output Mode: Advanced) > Streaming
+     Encoder:            x264 (or NVIDIA NVENC / QuickSync if available)
+     Rate Control:       CBR, Bitrate 2500 Kbps
+     Keyframe Interval:  1 s
+     CPU Usage Preset:   veryfast, Tune: zerolatency
+5. OBS > Settings > Video
+     Output Resolution:  1280x720, FPS: 15
+6. OBS > Start Streaming
+7. Get laptop B's IP address (Command Prompt):
+     ipconfig        ->  "IPv4 Address" under Wi-Fi
+8. On the MacBook, set in .env:
+     CAMERA_SOURCE=rtsp://LAPTOP_B_IP:8554/lot
+9. On the MacBook, start the camera feed:
+     python scripts/send_frame.py
+
+
+DATABASE (XAMPP MySQL)
+----------------------
+1. Open XAMPP (manager-osx) > Manage Servers > start "MySQL Database"
+   (start "Apache Web Server" too if you want phpMyAdmin)
+2. phpMyAdmin:              http://localhost/phpmyadmin
+3. Start the server as usual (python main.py). It creates the
+   "parkpatrol" database and all tables automatically.
+   Or import database/schema.sql from phpMyAdmin's Import tab.
+4. Settings live in .env:   DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+   DB_ENABLED=false         run without MySQL
+If MySQL is off, the site still works; history just isn't saved.
+
+
+OPTIONAL .env SETTINGS
+----------------------
+CAMERA_SOURCE=1             camera number, or a stream link (rtsp://...)
+CAMERA_FPS=15               frames per second sent to the server
+CAMERA_WIDTH=640            frame width in pixels (larger = sharper, more data)
+NOTIFY_COOLDOWN_MINUTES=0   no cooldown between subscriber notifications (rehearsals)
+TRACKER_SERVER_URL=...      server address used by the scripts (default http://localhost:8000)
