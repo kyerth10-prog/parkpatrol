@@ -1,4 +1,5 @@
 """Environment configuration generator."""
+import base64
 import getpass
 import secrets
 from pathlib import Path
@@ -32,6 +33,7 @@ lines = [
     f"ADMIN_EMAILS={','.join(email_list)}",
     f"SESSION_SECRET={secrets.token_hex(32)}",
     f"TRACKER_API_KEY={secrets.token_urlsafe(32)}",
+    f"DATA_ENCRYPTION_KEY={base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()}",
     "BASE_URL=http://localhost:8000",
     "HTTPS_ONLY=false",
 ]

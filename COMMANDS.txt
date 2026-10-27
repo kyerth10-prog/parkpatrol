@@ -90,6 +90,16 @@ TELEGRAM_BOT_TOKEN: two copies of the bot fight over Telegram messages.
 Free plan: the site sleeps after 15 min without traffic (~1 min to wake).
 
 
+DATA ENCRYPTION
+---------------
+Personal data in MySQL (admin email/name/photo, Telegram chat IDs, violation
+snapshots) is encrypted with AES-256-GCM. Sign-in logs keep only ok / invalid.
+The key is DATA_ENCRYPTION_KEY in .env and in Render (same value in both).
+New key:                    python scripts/generate_key.py
+BACK UP THE KEY. Without it the encrypted data can never be read again.
+Never commit it or store it in the database.
+
+
 OPTIONAL .env SETTINGS
 ----------------------
 CAMERA_SOURCE=1             camera number, or a stream link (rtsp://...)

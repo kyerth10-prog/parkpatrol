@@ -359,12 +359,6 @@ def auth_base(request: Request):
     return BASE_URL
 
 
-def client_info(request: Request):
-    forwarded = request.headers.get("x-forwarded-for", "")
-    ip = forwarded.split(",")[0].strip() or (request.client.host if request.client else None)
-    return ip, request.headers.get("user-agent")
-
-
 @app.get("/login")
 async def login(request: Request):
     return await oauth.google.authorize_redirect(request, f"{auth_base(request)}/auth")
@@ -376,19 +370,19 @@ async def auth(request: Request):
         token = await oauth.google.authorize_access_token(request)
     except OAuthError as error:
         print("Sign-in failed:", error)
-        database.auth_event("error", None, *client_info(request), detail=str(error)[:255])
+        database.auth_event("login", ok=False)
         raise HTTPException(status_code=400, detail="Sign-in failed. Please try again.")
 
     user = token.get("userinfo") or {}
     email = (user.get("email") or "").lower()
     if not user.get("email_verified"):
-        database.auth_event("unverified", user, *client_info(request))
+        database.auth_event("login", ok=False)
         raise HTTPException(status_code=403, detail="This Google account is not allowed.")
     if email not in ADMIN_EMAILS:
-        database.auth_event("denied", user, *client_info(request), detail="Not on ADMIN_EMAILS")
+        database.auth_event("login", ok=False)
         raise HTTPException(status_code=403, detail="This Google account is not allowed.")
 
-    database.admin_login(user, *client_info(request))
+    database.admin_login(user)
     request.session.clear()
     request.session["admin_email"] = email
     request.session["admin_name"] = user.get("name")
@@ -400,8 +394,7 @@ async def auth(request: Request):
 def logout(request: Request):
     email = request.session.get("admin_email")
     if email:
-        database.auth_event("logout", {"email": email, "name": request.session.get("admin_name")},
-                            *client_info(request))
+        database.auth_event("logout", ok=True, email=email)
     request.session.clear()
     return RedirectResponse(url="/")
 

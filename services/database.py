@@ -11,10 +11,13 @@ import ssl
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
 import pymysql
+
+from services import crypto
 
 SCHEMA_FILE = Path(__file__).resolve().parent.parent / "database" / "schema.sql"
 
@@ -32,7 +35,8 @@ SSL_CA = os.environ.get("DB_SSL_CA", "").strip().strip("'\"")
 RETRY_SECONDS = 15
 
 _jobs = queue.Queue(maxsize=10_000)
-_conn = None
+_conn = None          # used only by the writer thread
+_started = False
 _last_failure = 0.0
 _warned = False
 _violation_ids = {}
@@ -69,12 +73,13 @@ def _connect(database=NAME):
 
 
 def _connection():
+    """The writer thread's connection (never shared with other threads)."""
     global _conn, _last_failure, _warned
     if _conn is not None:
         try:
             _conn.ping(reconnect=True)
             return _conn
-        except pymysql.MySQLError:
+        except Exception:
             _conn = None
     if time.time() - _last_failure < RETRY_SECONDS:
         return None
@@ -108,6 +113,99 @@ def _create_schema():
                                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
                 else:
                     cur.execute(statement)
+            _migrate(cur)
+    finally:
+        conn.close()
+
+
+# ----------------------------------------------------------------------------
+# Migration: plain-text personal data -> encrypted (databases created before
+# encryption was added). Each step runs only when the old columns still exist.
+# ----------------------------------------------------------------------------
+def _columns(cur, table):
+    cur.execute("SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = DATABASE() AND table_name = %s", (table,))
+    return {row[0].lower() for row in cur.fetchall()}
+
+
+def _migrate(cur):
+    # Sign-in log: keep only the outcome; this step needs no key.
+    if "email" in _columns(cur, "auth_events"):
+        cur.execute("ALTER TABLE auth_events ADD COLUMN result ENUM('ok', 'invalid') NOT NULL DEFAULT 'ok' AFTER event")
+        cur.execute("UPDATE auth_events SET result = 'invalid', event = 'login' "
+                    "WHERE event IN ('denied', 'unverified', 'error')")
+        cur.execute("ALTER TABLE auth_events MODIFY event ENUM('login', 'logout') NOT NULL, "
+                    "MODIFY result ENUM('ok', 'invalid') NOT NULL, "
+                    "DROP COLUMN email, DROP COLUMN google_sub, DROP COLUMN name, "
+                    "DROP COLUMN ip_address, DROP COLUMN user_agent, DROP COLUMN detail")
+        print("Database: sign-in log reduced to ok / invalid")
+
+    old_admins = "email" in _columns(cur, "admins")
+    old_subscribers = "chat_id" in _columns(cur, "telegram_subscribers")
+    old_snapshots = "snapshot" in _columns(cur, "violations")
+    if not (old_admins or old_subscribers or old_snapshots):
+        return
+    if not crypto.ENABLED:
+        print("Database: plain-text personal data found; set DATA_ENCRYPTION_KEY to encrypt it")
+        return
+
+    if old_admins:
+        cur.execute("ALTER TABLE admins ADD COLUMN account_hash CHAR(64) NULL AFTER id, "
+                    "ADD COLUMN email_hash CHAR(64) NULL AFTER account_hash, "
+                    "ADD COLUMN email_enc TEXT NULL AFTER email_hash, "
+                    "ADD COLUMN name_enc TEXT NULL AFTER email_enc, "
+                    "ADD COLUMN picture_enc TEXT NULL AFTER name_enc")
+        cur.execute("SELECT id, google_sub, email, name, picture_url FROM admins")
+        for admin_id, sub, email, name, picture in cur.fetchall():
+            cur.execute("UPDATE admins SET account_hash = %s, email_hash = %s, email_enc = %s, "
+                        "name_enc = %s, picture_enc = %s WHERE id = %s",
+                        (crypto.lookup_hash(sub), crypto.lookup_hash(email),
+                         crypto.encrypt(email.lower(), "admins.email"),
+                         crypto.encrypt(name, "admins.name"),
+                         crypto.encrypt(picture, "admins.picture"), admin_id))
+        cur.execute("ALTER TABLE admins DROP COLUMN google_sub, DROP COLUMN email, DROP COLUMN name, "
+                    "DROP COLUMN given_name, DROP COLUMN family_name, DROP COLUMN picture_url, "
+                    "DROP COLUMN hosted_domain, DROP COLUMN locale, "
+                    "MODIFY account_hash CHAR(64) NOT NULL, MODIFY email_hash CHAR(64) NOT NULL, "
+                    "MODIFY email_enc TEXT NOT NULL, "
+                    "ADD UNIQUE KEY uq_admins_account (account_hash), ADD UNIQUE KEY uq_admins_email (email_hash)")
+        print("Database: admin accounts encrypted")
+
+    if old_subscribers:
+        cur.execute("ALTER TABLE telegram_subscribers ADD COLUMN chat_hash CHAR(64) NULL, "
+                    "ADD COLUMN chat_id_enc TEXT NULL")
+        cur.execute("SELECT chat_id FROM telegram_subscribers")
+        for (chat_id,) in cur.fetchall():
+            cur.execute("UPDATE telegram_subscribers SET chat_hash = %s, chat_id_enc = %s WHERE chat_id = %s",
+                        (crypto.lookup_hash(chat_id), crypto.encrypt(chat_id, "subscribers.chat_id"), chat_id))
+        cur.execute("ALTER TABLE telegram_subscribers DROP PRIMARY KEY, DROP COLUMN chat_id, "
+                    "ADD COLUMN id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST, "
+                    "MODIFY chat_hash CHAR(64) NOT NULL AFTER id, MODIFY chat_id_enc TEXT NOT NULL AFTER chat_hash, "
+                    "ADD UNIQUE KEY uq_subscribers_chat (chat_hash)")
+        print("Database: Telegram subscribers encrypted")
+
+    if old_snapshots:
+        cur.execute("ALTER TABLE violations ADD COLUMN snapshot_enc MEDIUMBLOB NULL AFTER duration_seconds")
+        cur.execute("SELECT id, snapshot FROM violations WHERE snapshot IS NOT NULL")
+        for violation_id, snapshot in cur.fetchall():
+            cur.execute("UPDATE violations SET snapshot_enc = %s WHERE id = %s",
+                        (crypto.encrypt_bytes(bytes(snapshot), "violations.snapshot"), violation_id))
+        cur.execute("ALTER TABLE violations DROP COLUMN snapshot")
+        print("Database: violation snapshots encrypted")
+
+
+@contextmanager
+def _reader():
+    """A short-lived connection for reads made outside the writer thread."""
+    try:
+        conn = _connect()
+    except pymysql.MySQLError as error:
+        print("Database: MySQL unavailable for reading:", error)
+        yield None
+        return
+    try:
+        with conn.cursor() as cur:
+            yield cur
     finally:
         conn.close()
 
@@ -139,22 +237,27 @@ def _submit(job):
 
 def start():
     """Create tables, start the writer thread, and return saved spot states."""
+    global _started
     if not ENABLED:
         return {}
+    if not crypto.ENABLED:
+        print("Encryption: DATA_ENCRYPTION_KEY not set; admin details, subscribers and "
+              "snapshots will not be saved to MySQL")
     try:
         _create_schema()
     except pymysql.MySQLError as error:
         print(f"Database: could not prepare MySQL ({error}); running without saving history")
-    threading.Thread(target=_worker, daemon=True, name="database").start()
+    if not _started:
+        _started = True
+        threading.Thread(target=_worker, daemon=True, name="database").start()
     return load_spots()
 
 
 def load_spots():
-    conn = _connection()
-    if conn is None:
-        return {}
     try:
-        with conn.cursor() as cur:
+        with _reader() as cur:
+            if cur is None:
+                return {}
             cur.execute("SELECT id, status, status_since FROM spots")
             return {row[0]: (row[1], row[2].timestamp()) for row in cur.fetchall()}
     except pymysql.MySQLError as error:
@@ -165,61 +268,72 @@ def load_spots():
 # ----------------------------------------------------------------------------
 # Admins and sign-in
 # ----------------------------------------------------------------------------
-def admin_login(user, ip, user_agent):
+def admin_login(user):
+    """Record a successful sign-in. Identity is stored encrypted / as fingerprints only."""
     now = datetime.now()
-    sub, email = user.get("sub"), (user.get("email") or "").lower()
+    email = (user.get("email") or "").lower()
 
     def job(cur):
-        cur.execute(
-            """INSERT INTO admins (google_sub, email, name, given_name, family_name, picture_url,
-                                   hosted_domain, locale, login_count, first_login, last_login)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
-               ON DUPLICATE KEY UPDATE email = VALUES(email), name = VALUES(name),
-                 given_name = VALUES(given_name), family_name = VALUES(family_name),
-                 picture_url = VALUES(picture_url), hosted_domain = VALUES(hosted_domain),
-                 locale = VALUES(locale), login_count = login_count + 1, last_login = VALUES(last_login)""",
-            (sub, email, user.get("name"), user.get("given_name"), user.get("family_name"),
-             user.get("picture"), user.get("hd"), user.get("locale"), now, now),
-        )
-        cur.execute("SELECT id FROM admins WHERE google_sub = %s", (sub,))
-        admin_id = cur.fetchone()[0]
-        _admin_ids[email] = admin_id
-        _auth_event(cur, "login", admin_id, email, sub, user.get("name"), ip, user_agent, None, now)
+        admin_id = None
+        if crypto.ENABLED:
+            cur.execute(
+                """INSERT INTO admins (account_hash, email_hash, email_enc, name_enc, picture_enc,
+                                       login_count, first_login, last_login)
+                   VALUES (%s, %s, %s, %s, %s, 1, %s, %s)
+                   ON DUPLICATE KEY UPDATE email_hash = VALUES(email_hash), email_enc = VALUES(email_enc),
+                     name_enc = VALUES(name_enc), picture_enc = VALUES(picture_enc),
+                     login_count = login_count + 1, last_login = VALUES(last_login)""",
+                (crypto.lookup_hash(user.get("sub")), crypto.lookup_hash(email),
+                 crypto.encrypt(email, "admins.email"), crypto.encrypt(user.get("name"), "admins.name"),
+                 crypto.encrypt(user.get("picture"), "admins.picture"), now, now),
+            )
+            admin_id = _admin_id(cur, email, refresh=True)
+        _auth_event(cur, "login", "ok", admin_id, now)
 
     _submit(job)
 
 
-def auth_event(event, user=None, ip=None, user_agent=None, detail=None):
-    user = user or {}
-    email = (user.get("email") or "").lower() or None
+def auth_event(event, ok, email=None):
+    """Log a sign-in outcome. Failed attempts store nothing about who tried."""
     now = datetime.now()
 
     def job(cur):
-        _auth_event(cur, event, _admin_id(cur, email), email, user.get("sub"),
-                    user.get("name"), ip, user_agent, detail, now)
+        _auth_event(cur, event, "ok" if ok else "invalid", _admin_id(cur, email) if ok else None, now)
 
     _submit(job)
 
 
-def _auth_event(cur, event, admin_id, email, sub, name, ip, user_agent, detail, when):
-    cur.execute(
-        """INSERT INTO auth_events (admin_id, event, email, google_sub, name, ip_address,
-                                    user_agent, detail, created_at)
-           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-        (admin_id, event, email, sub, name, ip, (user_agent or "")[:255] or None, detail, when),
-    )
+def _auth_event(cur, event, result, admin_id, when):
+    cur.execute("INSERT INTO auth_events (admin_id, event, result, created_at) VALUES (%s, %s, %s, %s)",
+                (admin_id, event, result, when))
 
 
-def _admin_id(cur, email):
-    if not email:
+def _admin_id(cur, email, refresh=False):
+    if not email or not crypto.ENABLED:
         return None
-    if email not in _admin_ids:
-        cur.execute("SELECT id FROM admins WHERE email = %s", (email,))
+    email = email.lower()
+    if refresh or email not in _admin_ids:
+        cur.execute("SELECT id FROM admins WHERE email_hash = %s", (crypto.lookup_hash(email),))
         row = cur.fetchone()
         if not row:
             return None
         _admin_ids[email] = row[0]
     return _admin_ids[email]
+
+
+def list_admins():
+    """Decrypted admin list, for display inside the app only."""
+    if not (ENABLED and crypto.ENABLED):
+        return []
+    with _reader() as cur:
+        if cur is None:
+            return []
+        cur.execute("SELECT id, email_enc, name_enc, login_count, last_login FROM admins ORDER BY last_login DESC")
+        return [
+            {"id": admin_id, "email": crypto.decrypt(email, "admins.email"),
+             "name": crypto.decrypt(name, "admins.name"), "logins": count, "last_login": last}
+            for admin_id, email, name, count, last in cur.fetchall()
+        ]
 
 
 # ----------------------------------------------------------------------------
@@ -270,8 +384,8 @@ def violation_started(spot_ids, started_at, snapshot):
 
     def job(cur):
         cur.execute(
-            "INSERT INTO violations (spots_label, started_at, snapshot) VALUES (%s, %s, %s)",
-            ("+".join(spot_ids), _dt(started_at), snapshot),
+            "INSERT INTO violations (spots_label, started_at, snapshot_enc) VALUES (%s, %s, %s)",
+            ("+".join(spot_ids), _dt(started_at), crypto.encrypt_bytes(snapshot, "violations.snapshot")),
         )
         violation_id = cur.lastrowid
         _violation_ids[key] = violation_id
@@ -329,23 +443,28 @@ def _last_violation_id(cur, spot_ids):
 # Telegram subscribers
 # ----------------------------------------------------------------------------
 def load_subscribers():
-    """Active subscribers saved in MySQL, in the shape telegram_bot keeps them."""
-    conn = _connection() if ENABLED else None
-    if conn is None:
+    """Active subscribers saved in MySQL, decrypted into the shape telegram_bot keeps them."""
+    if not (ENABLED and crypto.ENABLED):
         return {}
     try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT chat_id, subscribed_at, last_notified_at FROM telegram_subscribers WHERE active")
+        with _reader() as cur:
+            if cur is None:
+                return {}
+            cur.execute("SELECT chat_id_enc, subscribed_at, last_notified_at FROM telegram_subscribers WHERE active")
             return {
-                str(chat_id): {
+                crypto.decrypt(chat_enc, "subscribers.chat_id"): {
                     "since": subscribed.timestamp(),
                     "last_notified": notified.timestamp() if notified else 0,
                 }
-                for chat_id, subscribed, notified in cur.fetchall()
+                for chat_enc, subscribed, notified in cur.fetchall()
             }
-    except pymysql.MySQLError as error:
+    except Exception as error:
         print("Database error:", error)
         return {}
+
+
+def _subscriber_row(chat_id):
+    return crypto.lookup_hash(chat_id), crypto.encrypt(str(chat_id), "subscribers.chat_id")
 
 
 def subscriber_added(chat_id, since=None):
@@ -353,25 +472,27 @@ def subscriber_added(chat_id, since=None):
 
     def job(cur):
         cur.execute(
-            """INSERT INTO telegram_subscribers (chat_id, active, subscribed_at)
-               VALUES (%s, TRUE, %s)
+            """INSERT INTO telegram_subscribers (chat_hash, chat_id_enc, active, subscribed_at)
+               VALUES (%s, %s, TRUE, %s)
                ON DUPLICATE KEY UPDATE active = TRUE, subscribed_at = VALUES(subscribed_at),
                  unsubscribed_at = NULL, unsubscribe_reason = NULL""",
-            (int(chat_id), when),
+            (*_subscriber_row(chat_id), when),
         )
 
-    _submit(job)
+    if crypto.ENABLED:
+        _submit(job)
 
 
 def subscriber_import(subscribers):
     """Copy existing subscribers.json entries in without touching newer rows."""
     def job(cur):
         cur.executemany(
-            "INSERT IGNORE INTO telegram_subscribers (chat_id, active, subscribed_at) VALUES (%s, TRUE, %s)",
-            [(int(cid), _dt(sub.get("since", time.time()))) for cid, sub in subscribers.items()],
+            "INSERT IGNORE INTO telegram_subscribers (chat_hash, chat_id_enc, active, subscribed_at) "
+            "VALUES (%s, %s, TRUE, %s)",
+            [(*_subscriber_row(cid), _dt(sub.get("since", time.time()))) for cid, sub in subscribers.items()],
         )
 
-    if subscribers:
+    if subscribers and crypto.ENABLED:
         _submit(job)
 
 
@@ -381,11 +502,12 @@ def subscriber_removed(chat_id, reason):
     def job(cur):
         cur.execute(
             """UPDATE telegram_subscribers SET active = FALSE, unsubscribed_at = %s, unsubscribe_reason = %s
-               WHERE chat_id = %s""",
-            (now, reason, int(chat_id)),
+               WHERE chat_hash = %s""",
+            (now, reason, crypto.lookup_hash(chat_id)),
         )
 
-    _submit(job)
+    if crypto.ENABLED:
+        _submit(job)
 
 
 def broadcast_sent(spot_id, delivered_ids, recipients):
@@ -397,11 +519,11 @@ def broadcast_sent(spot_id, delivered_ids, recipients):
                VALUES (%s, %s, %s, %s)""",
             (spot_id, recipients, len(delivered_ids), now),
         )
-        if delivered_ids:
+        if delivered_ids and crypto.ENABLED:
             cur.executemany(
                 """UPDATE telegram_subscribers SET last_notified_at = %s,
-                     notifications_sent = notifications_sent + 1 WHERE chat_id = %s""",
-                [(now, int(cid)) for cid in delivered_ids],
+                     notifications_sent = notifications_sent + 1 WHERE chat_hash = %s""",
+                [(now, crypto.lookup_hash(cid)) for cid in delivered_ids],
             )
 
     _submit(job)

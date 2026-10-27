@@ -5,37 +5,30 @@ CREATE DATABASE IF NOT EXISTS parkpatrol CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 USE parkpatrol;
 
 -- ---------------------------------------------------------------------------
--- Admin accounts (the Google account each admin signed in with)
+-- Admin accounts. Personal details are encrypted by the server before they
+-- are stored; the database never holds them in readable form.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS admins (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  google_sub    VARCHAR(64)  NOT NULL UNIQUE COMMENT 'Permanent Google account ID',
-  email         VARCHAR(255) NOT NULL UNIQUE,
-  name          VARCHAR(255) NULL,
-  given_name    VARCHAR(128) NULL,
-  family_name   VARCHAR(128) NULL,
-  picture_url   VARCHAR(512) NULL,
-  hosted_domain VARCHAR(255) NULL COMMENT 'Google Workspace domain, e.g. dlsl.edu.ph',
-  locale        VARCHAR(16)  NULL,
+  account_hash  CHAR(64) NOT NULL UNIQUE COMMENT 'HMAC-SHA256 of the Google account ID (one-way)',
+  email_hash    CHAR(64) NOT NULL UNIQUE COMMENT 'HMAC-SHA256 of the email (one-way, for lookups)',
+  email_enc     TEXT     NOT NULL COMMENT 'Email, AES-256-GCM encrypted',
+  name_enc      TEXT     NULL     COMMENT 'Display name, AES-256-GCM encrypted',
+  picture_enc   TEXT     NULL     COMMENT 'Profile photo URL, AES-256-GCM encrypted',
   login_count   INT UNSIGNED NOT NULL DEFAULT 0,
   first_login   DATETIME     NOT NULL,
   last_login    DATETIME     NOT NULL
 ) ENGINE=InnoDB;
 
--- Every sign-in attempt, sign-out, and rejected Google account
+-- Sign-in log: only the outcome (ok / invalid) and the time. Rejected attempts
+-- store nothing about who tried.
 CREATE TABLE IF NOT EXISTS auth_events (
   id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  admin_id    INT UNSIGNED NULL,
-  event       ENUM('login', 'logout', 'denied', 'unverified', 'error') NOT NULL,
-  email       VARCHAR(255) NULL,
-  google_sub  VARCHAR(64)  NULL,
-  name        VARCHAR(255) NULL,
-  ip_address  VARCHAR(45)  NULL,
-  user_agent  VARCHAR(255) NULL,
-  detail      VARCHAR(255) NULL,
-  created_at  DATETIME(3)  NOT NULL,
+  admin_id    INT UNSIGNED NULL COMMENT 'Set only for successful sign-ins and sign-outs',
+  event       ENUM('login', 'logout') NOT NULL,
+  result      ENUM('ok', 'invalid')   NOT NULL,
+  created_at  DATETIME(3) NOT NULL,
   INDEX idx_auth_created (created_at),
-  INDEX idx_auth_email (email),
   CONSTRAINT fk_auth_admin FOREIGN KEY (admin_id) REFERENCES admins (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -86,7 +79,7 @@ CREATE TABLE IF NOT EXISTS violations (
   started_at  DATETIME(3) NOT NULL,
   cleared_at  DATETIME(3) NULL,
   duration_seconds INT UNSIGNED NULL,
-  snapshot    MEDIUMBLOB  NULL COMMENT 'Camera frame (JPEG) when the violation started',
+  snapshot_enc MEDIUMBLOB NULL COMMENT 'Camera frame when it started, AES-256-GCM encrypted',
   INDEX idx_violations_started (started_at)
 ) ENGINE=InnoDB;
 
@@ -113,10 +106,12 @@ CREATE TABLE IF NOT EXISTS security_alerts (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------
--- Public Telegram subscribers (chat ID only: no name, email, or phone)
+-- Public Telegram subscribers (encrypted chat ID only: no name, email, or phone)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS telegram_subscribers (
-  chat_id         BIGINT      PRIMARY KEY,
+  id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  chat_hash       CHAR(64)    NOT NULL UNIQUE COMMENT 'HMAC-SHA256 of the chat ID (one-way, for lookups)',
+  chat_id_enc     TEXT        NOT NULL COMMENT 'Telegram chat ID, AES-256-GCM encrypted',
   active          BOOLEAN     NOT NULL DEFAULT TRUE,
   subscribed_at   DATETIME    NOT NULL,
   unsubscribed_at DATETIME    NULL,
