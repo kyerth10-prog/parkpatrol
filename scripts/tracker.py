@@ -20,7 +20,7 @@ import requests
 
 from camera import (API_KEY, BLANK_HINT, CAMERA_SOURCE, SERVER, TARGET_FPS, FrameReader,
                     encode, is_blank, list_cameras)
-from detection import (BAYS, REGIONS, VIOLATION, Calibration, Detector, draw, load_empty,
+from detection import (BAYS, DATA_DIR, VIOLATION, Calibration, Detector, draw, load_empty,
                        save_empty)
 
 DETECT_FPS = 6
@@ -29,6 +29,15 @@ RESYNC_SECONDS = 60
 OVERLAY = os.environ.get("CAMERA_OVERLAY", "true").lower() != "false"
 
 CLICK_ORDER = ["A1 end, road side", "A1 end, back", "A6 end, back", "A6 end, road side"]
+
+
+def save_debug(frame):
+    path = DATA_DIR / "debug_frame.png"
+    DATA_DIR.mkdir(exist_ok=True)
+    cv2.imwrite(str(path), frame)
+    message = f"Saved {path.relative_to(DATA_DIR.parent)}"
+    print(message)
+    return message
 
 
 # ----------------------------------------------------------------------------
@@ -46,10 +55,14 @@ def calibrate():
     print("Click the 4 corners of the covered parking, in this order:")
     for i, name in enumerate(CLICK_ORDER, 1):
         print(f"  {i}. {name}")
-    print("Keys:  E = save corners + empty-lot snapshot (remove all cars first)")
-    print("       S = save corners only    R = start over    Q = quit")
+    print("Then REMOVE ALL CARS and press E to save the corners and the empty-lot snapshot.")
+    print("After that the boxes turn green/grey live: put a car in to test. R = redo, Q = quit.")
 
+    empty = load_empty() if old else None
+    detector_for = {"points": None, "detector": None}
     last_id, frame, message = -1, None, ""
+    if old and empty is None:
+        message = "No empty-lot snapshot yet: remove all cars and press E"
     while True:
         latest, last_id = reader.next_frame(last_id, timeout=0.2)
         if latest is not None:
@@ -62,13 +75,21 @@ def calibrate():
         view = frame.copy()
         cal = Calibration(points, old.thresholds if old else None) if len(points) == 4 else None
         if cal:
-            view = draw(view, cal)
+            # Live detection preview once an empty snapshot exists for these corners
+            if empty is not None and detector_for["points"] != list(points):
+                detector_for.update(points=list(points), detector=Detector(cal, empty))
+            result = detector_for["detector"].analyze(frame) if empty is not None else None
+            view = draw(view, cal, result, show_scores=result is not None)
             cv2.imshow("Straightened lot", cal.straighten(frame))
         for i, p in enumerate(points):
             cv2.circle(view, p, 7, (0, 215, 255), -1)
             cv2.putText(view, str(i + 1), (p[0] + 10, p[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 215, 255), 2)
-        hint = f"Click {len(points) + 1}: {CLICK_ORDER[len(points)]}" if len(points) < 4 else \
-            "E = save + empty snapshot   S = save corners   R = redo"
+        if len(points) < 4:
+            hint = f"Click {len(points) + 1}: {CLICK_ORDER[len(points)]}"
+        elif empty is None:
+            hint = "Remove ALL cars, then press E      R = redo corners"
+        else:
+            hint = "Live test: add/remove cars      E = retake empty snapshot   R = redo   Q = done"
         for y, text in ((30, hint), (60, message)):
             cv2.putText(view, text, (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
             cv2.putText(view, text, (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
@@ -77,15 +98,20 @@ def calibrate():
         key = cv2.waitKey(30) & 0xFF
         if key in (ord("q"), 27):
             break
+        if key == ord("d"):
+            message = save_debug(frame)
         if key == ord("r"):
             points.clear()
+            empty = None
             message = ""
         if key in (ord("s"), ord("e")) and cal:
             cal.save()
-            message = "Corners saved."
+            message = "Corners saved. Remove all cars and press E."
             if key == ord("e"):
                 save_empty(cal, frame)
-                message = "Corners and empty-lot snapshot saved. Press Q to finish."
+                empty = load_empty()
+                detector_for["points"] = None
+                message = "Saved! Put a car in a spot: its box should turn grey."
             print(message)
     cv2.destroyAllWindows()
 
@@ -231,9 +257,12 @@ def run(show):
         uploader.offer(annotated if OVERLAY else frame)
 
         if show:
-            cv2.imshow("Park Patrol - live detection (Q to quit)", annotated)
-            if cv2.waitKey(1) & 0xFF in (ord("q"), 27):
+            cv2.imshow("Park Patrol - live detection (Q to quit, D = save debug picture)", annotated)
+            key = cv2.waitKey(1) & 0xFF
+            if key in (ord("q"), 27):
                 break
+            if key == ord("d"):
+                save_debug(frame)
         time.sleep(max(0.0, interval - (time.time() - started)))
     cv2.destroyAllWindows()
 
