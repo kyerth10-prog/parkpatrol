@@ -36,25 +36,8 @@ const UI = (() => {
   // Counters
   function count(el, value, { suffix = "" } = {}) {
     if (!el) return;
-    const target = Number(value);
-    const from = Number(el.dataset.value ?? NaN);
-    el.dataset.value = target;
     el.classList.remove("skeleton");
-    if (Number.isNaN(from) || reduceMotion || from === target) {
-      el.textContent = target + suffix;
-      return;
-    }
-    const start = performance.now();
-    const dur = 600;
-    (function frame(now) {
-      const t = Math.min(1, (now - start) / dur);
-      const eased = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.round(from + (target - from) * eased) + suffix;
-      if (t < 1) requestAnimationFrame(frame);
-    })(start);
-    el.classList.remove("value-pop");
-    void el.offsetWidth;
-    el.classList.add("value-pop");
+    el.textContent = Number(value) + suffix;
   }
 
   // Sheets
@@ -181,61 +164,29 @@ const UI = (() => {
     sections.forEach((s) => spy.observe(s));
   }
 
-  // Segmented controls
-  function syncSegmented(group) {
-    const thumb = group.querySelector(".segmented__thumb");
-    const active = group.querySelector("[aria-pressed='true']");
-    if (!thumb || !active) return;
-    thumb.style.width = active.offsetWidth + "px";
-    thumb.style.transform = `translateX(${active.offsetLeft - 3}px)`;
-  }
-  document.querySelectorAll(".segmented").forEach((group) => {
-    group.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      group.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
-      syncSegmented(group);
-      group.dispatchEvent(new CustomEvent("change", { detail: btn.dataset.value }));
-    });
-    syncSegmented(group);
-  });
-  const resyncAll = () => document.querySelectorAll(".segmented").forEach(syncSegmented);
-  window.addEventListener("resize", resyncAll);
-  if (document.fonts) document.fonts.ready.then(resyncAll);
-
-  // Bay lamps
+  // Bay lamps: one read-only light per spot
   function lamps(container, ids) {
     const els = {};
-    const current = {};
-    container.classList.add("is-loading");
     container.replaceChildren(...ids.map((id) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "lamp";
-      btn.dataset.spot = id;
-      btn.innerHTML = '<span class="lamp__light" aria-hidden="true"></span><span class="lamp__id"></span><span class="lamp__meta"></span>';
-      btn.querySelector(".lamp__id").textContent = id;
-      btn.setAttribute("aria-label", "Spot " + id);
-      els[id] = btn;
-      return btn;
+      const lamp = document.createElement("div");
+      lamp.className = "lamp";
+      lamp.setAttribute("role", "img");
+      lamp.innerHTML = '<span class="lamp__light" aria-hidden="true"></span><span class="lamp__id"></span><span class="lamp__meta"></span>';
+      lamp.querySelector(".lamp__id").textContent = id;
+      lamp.setAttribute("aria-label", "Spot " + id);
+      els[id] = lamp;
+      return lamp;
     }));
     return {
       update(states, meta = {}, words = {}) {
-        container.classList.remove("is-loading");
         for (const id of ids) {
           const state = states[id] || "";
           const el = els[id];
-          const changed = current[id] !== undefined && current[id] !== state;
-          current[id] = state;
-          el.classList.remove("available", "taken", "violation", "changed");
+          el.classList.remove("available", "taken", "violation");
           if (state) el.classList.add(state);
-          if (changed && !reduceMotion) { void el.offsetWidth; el.classList.add("changed"); }
           el.querySelector(".lamp__meta").textContent = meta[id] || "";
           el.setAttribute("aria-label", "Spot " + id + ", " + (words[state] || state || "no data"));
         }
-      },
-      select(id) {
-        for (const key in els) els[key].classList.toggle("is-selected", key === id);
       },
     };
   }

@@ -74,9 +74,7 @@ const LOT = (() => {
       spot.shape.classList.add("spot");
       spot.group.classList.add("spot-g");
       spot.labels.forEach((l) => l.classList.add("spot-label"));
-      Object.assign(spot.group.dataset, { spot: id });
-      spot.group.setAttribute("tabindex", "0");
-      spot.group.setAttribute("role", "button");
+      spot.group.setAttribute("role", "img");
       spot.group.setAttribute("aria-label", "Spot " + id);
       spots[id] = spot;
     }
@@ -98,26 +96,19 @@ const LOT = (() => {
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
+  // A read-only map: spots show their status; nothing is clickable or animated
   function render(container) {
     let svg = null, spots = {}, links = null;
-    let states = {}, selected = null, groups = [];
-    const current = {};
+    let states = {}, groups = [];
 
-    function applyStates(animate) {
+    function applyStates() {
       for (const id in spots) {
         const state = states[id] || "";
         const { group, shape } = spots[id];
-        const changed = animate && current[id] !== undefined && current[id] !== state;
-        current[id] = state;
-        for (const node of [group, shape]) node.classList.remove("available", "taken", "violation", "changed");
+        for (const node of [group, shape]) node.classList.remove("available", "taken", "violation");
         if (state) { group.classList.add(state); shape.classList.add(state); }
-        if (changed) { void shape.getBBox(); shape.classList.add("changed"); }
         group.setAttribute("aria-label", "Spot " + id + (state ? ", " + state : ""));
       }
-    }
-
-    function applySelection() {
-      for (const id in spots) spots[id].shape.classList.toggle("is-selected", id === selected);
     }
 
     function applyGroups() {
@@ -138,15 +129,7 @@ const LOT = (() => {
       svg = node;
       spots = prepare(svg);
       links = el("g", { class: "viol-links", "aria-hidden": "true" }, svg);
-      svg.addEventListener("keydown", (e) => {
-        const target = e.target.closest && e.target.closest("[data-spot]");
-        if ((e.key === "Enter" || e.key === " ") && target) {
-          e.preventDefault();
-          target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-        }
-      });
-      applyStates(false);
-      applySelection();
+      applyStates();
       applyGroups();
       if (Object.keys(states).length) container.classList.remove("is-loading");
     }
@@ -171,11 +154,7 @@ const LOT = (() => {
         states = { ...next };
         if (!svg) return;
         container.classList.remove("is-loading");
-        applyStates(true);
-      },
-      select(id) {
-        selected = id;
-        applySelection();
+        applyStates();
       },
       groups(list) {
         groups = list || [];

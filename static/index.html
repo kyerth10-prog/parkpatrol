@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=8">
+  <link rel="stylesheet" href="/static/ui.css?v=9">
 </head>
 <body class="guest has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -98,23 +98,11 @@
         <div class="panel__head">
           <div class="panel__title">
             <h2 id="map-title">Lot layout</h2>
-            <p>Tap a spot to see its details</p>
-          </div>
-          <div class="panel__tools">
-            <div class="segmented" id="view-toggle" role="group" aria-label="View">
-              <span class="segmented__thumb" aria-hidden="true"></span>
-              <button type="button" aria-pressed="true" data-value="map">
-                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Map
-              </button>
-              <button type="button" aria-pressed="false" data-value="list">
-                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#grid"></use></svg>List
-              </button>
-            </div>
+            <p>Live status of each spot</p>
           </div>
         </div>
 
         <div id="lot" class="lot is-loading"></div>
-        <div id="spot-list" class="spot-grid" hidden></div>
 
         <div class="panel__foot">
           <div class="legend">
@@ -183,37 +171,6 @@
     <a href="/login"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Admin</a>
   </nav>
 
-  <!-- Spot sheet -->
-  <div class="sheet" id="spot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-    <div class="sheet__scrim" data-sheet-close></div>
-    <div class="sheet__panel">
-      <div class="sheet__grip" aria-hidden="true"></div>
-      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
-        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
-      </button>
-      <div class="spot-detail">
-        <div class="spot-detail__head">
-          <span class="spot-detail__id" id="sheet-id">A1</span>
-          <div>
-            <h3 id="sheet-title">Spot A1</h3>
-            <span class="pill" id="sheet-status">—</span>
-          </div>
-        </div>
-        <p class="muted" id="sheet-text"></p>
-        <div class="spot-detail__actions">
-          <button class="btn btn--primary" type="button" data-soon="Directions to this spot">
-            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#navigation"></use></svg>
-            Directions
-          </button>
-          <button class="btn" type="button" data-notify>
-            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>
-            Alert me
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Notify sheet -->
   <div class="sheet" id="notify-sheet" role="dialog" aria-modal="true" aria-labelledby="notify-title">
     <div class="sheet__scrim" data-sheet-close></div>
@@ -237,21 +194,16 @@
     </div>
   </div>
 
-  <script src="/static/ui.js?v=8"></script>
-  <script src="/static/lot.js?v=8"></script>
+  <script src="/static/ui.js?v=9"></script>
+  <script src="/static/lot.js?v=9"></script>
   <script>
-    const lotEl = document.getElementById("lot");
-    const lot = LOT.render(lotEl);
+    const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
     const note = document.getElementById("note");
     const live = document.getElementById("live");
     const count = document.getElementById("count");
-    const listEl = document.getElementById("spot-list");
     let spots = {};
-    let selected = null;
     let wasOffline = false;
-
-    const WORD = { available: "Available", taken: "Taken" };
 
     async function refresh() {
       try {
@@ -287,9 +239,6 @@
         live.classList.remove("is-offline");
         if (wasOffline) UI.toast("Back online");
         wasOffline = false;
-
-        renderList();
-        if (selected) fillSheet(selected);
       } catch (error) {
         note.textContent = "Reconnecting…";
         live.classList.add("is-offline");
@@ -297,67 +246,6 @@
         wasOffline = true;
       }
     }
-
-    // List view
-    function renderList() {
-      if (listEl.hidden) return;
-      if (!listEl.children.length) {
-        listEl.append(...lot.ids.map((id, i) => {
-          const tile = document.createElement("button");
-          tile.type = "button";
-          tile.dataset.spot = id;
-          tile.style.animationDelay = i * 20 + "ms";
-          tile.innerHTML = "<b></b><span><span class='dot'></span><i></i></span>";
-          tile.querySelector("b").textContent = id;
-          return tile;
-        }));
-      }
-      for (const tile of listEl.children) {
-        const state = spots[tile.dataset.spot] || "";
-        tile.className = "spot-tile " + state;
-        tile.querySelector(".dot").className = "dot " + (state === "available" ? "dot--ok" : state === "taken" ? "dot--taken" : "dot--unknown");
-        tile.querySelector("i").textContent = WORD[state] || "No data";
-      }
-    }
-
-    document.getElementById("view-toggle").addEventListener("change", (e) => {
-      const list = e.detail === "list";
-      lotEl.hidden = list;
-      listEl.hidden = !list;
-      listEl.replaceChildren();
-      renderList();
-    });
-
-    // Spot details
-    function fillSheet(id) {
-      const state = spots[id] || "";
-      const badge = document.getElementById("sheet-id");
-      badge.textContent = id;
-      badge.className = "spot-detail__id " + state;
-      document.getElementById("sheet-title").textContent = "Spot " + id;
-      const pill = document.getElementById("sheet-status");
-      pill.textContent = WORD[state] || "No data";
-      pill.className = "pill " + (state === "available" ? "pill--ok" : state === "taken" ? "pill--taken" : "pill--muted");
-      document.getElementById("sheet-text").textContent =
-        state === "available" ? "This spot is open. Head over before someone else takes it!"
-        : state === "taken" ? "This spot is occupied right now. We'll keep this updated live."
-        : "We haven't received data for this spot yet.";
-    }
-
-    function selectSpot(id) {
-      selected = id;
-      lot.select(id);
-      lamps.select(id);
-    }
-
-    document.addEventListener("click", (e) => {
-      const target = e.target.closest("[data-spot]");
-      if (!target) return;
-      selectSpot(target.dataset.spot);
-      fillSheet(selected);
-      UI.sheet.open("spot-sheet");
-    });
-    document.getElementById("spot-sheet").addEventListener("sheet:close", () => selectSpot(null));
 
     // Share
     document.getElementById("share").addEventListener("click", async () => {
@@ -392,7 +280,6 @@
     document.addEventListener("click", async (e) => {
       if (!e.target.closest("[data-notify]")) return;
       if (!notifyLink) { UI.toast("Spot alerts aren't available right now", { icon: "info" }); return; }
-      UI.sheet.close("spot-sheet");
       document.getElementById("notify-link").href = notifyLink;
       UI.sheet.open("notify-sheet");
       const qr = document.getElementById("notify-qr");

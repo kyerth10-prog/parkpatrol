@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=8">
+  <link rel="stylesheet" href="/static/ui.css?v=9">
 </head>
 <body class="admin has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -174,7 +174,7 @@
 
           <section class="panel" id="map" aria-labelledby="map-title">
             <div class="panel__head">
-              <div class="panel__title"><h2 id="map-title">Lot layout</h2><p>Select a spot for details</p></div>
+              <div class="panel__title"><h2 id="map-title">Lot layout</h2><p>Live status of each spot</p></div>
             </div>
             <div id="lot" class="lot is-loading"></div>
             <div class="panel__foot"><div class="legend">
@@ -250,39 +250,8 @@
     <a href="#activity"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>Activity</a>
   </nav>
 
-  <!-- Spot sheet -->
-  <div class="sheet" id="spot-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-    <div class="sheet__scrim" data-sheet-close></div>
-    <div class="sheet__panel">
-      <div class="sheet__grip" aria-hidden="true"></div>
-      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
-        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
-      </button>
-      <div class="spot-detail">
-        <div class="spot-detail__head">
-          <span class="spot-detail__id" id="sheet-id">A1</span>
-          <div>
-            <h3 id="sheet-title">Spot A1</h3>
-            <span class="pill" id="sheet-status">—</span>
-          </div>
-        </div>
-        <p class="muted" id="sheet-text"></p>
-        <div class="spot-detail__actions">
-          <button class="btn" type="button" id="sheet-history">
-            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>
-            History
-          </button>
-          <button class="btn btn--primary" type="button" data-soon="Manual status override">
-            <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>
-            Override
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="/static/ui.js?v=8"></script>
-  <script src="/static/lot.js?v=8"></script>
+  <script src="/static/ui.js?v=9"></script>
+  <script src="/static/lot.js?v=9"></script>
   <script>
     const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
@@ -296,7 +265,6 @@
     let filter = "all";
     let search = "";
     let lastViolCount = null;
-    let selected = null;
     let paused = false;
 
     document.getElementById("today").textContent =
@@ -428,7 +396,6 @@
       setStatus("tg", data.telegram_enabled, data.telegram_enabled ? "Enabled for security" : "Not configured");
 
       renderEvents();
-      if (selected) fillSheet(selected);
     }
 
     function setStatus(key, ok, text) {
@@ -587,44 +554,6 @@
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       UI.toast("Exported " + rows.length + " events");
-    });
-
-    // Spot details
-    function fillSheet(id) {
-      if (!state || !state.spots[id]) return;
-      const s = state.spots[id];
-      const badge = document.getElementById("sheet-id");
-      badge.textContent = id;
-      badge.className = "spot-detail__id " + CLASS[s.status];
-      document.getElementById("sheet-title").textContent = "Spot " + id;
-      const pill = document.getElementById("sheet-status");
-      pill.textContent = NICE[s.status];
-      pill.className = "pill " + PILL[s.status];
-      const across = s.group && s.group.length > 1 ? " across spots " + s.group.join(" + ") : "";
-      document.getElementById("sheet-text").textContent =
-        NICE[s.status] + across + " for " + minutes(state.server_time - s.since) + " (since " + time(s.since) + ").";
-    }
-
-    function selectSpot(id) {
-      selected = id;
-      lot.select(id);
-      lamps.select(id);
-    }
-    document.addEventListener("click", (e) => {
-      const target = e.target.closest("#lot [data-spot], #lamps [data-spot]");
-      if (!target || !state) return;
-      selectSpot(target.dataset.spot);
-      fillSheet(selected);
-      UI.sheet.open("spot-sheet");
-    });
-    document.getElementById("spot-sheet").addEventListener("sheet:close", () => selectSpot(null));
-    document.getElementById("sheet-history").addEventListener("click", () => {
-      const id = selected;
-      UI.sheet.close("spot-sheet");
-      searchInput.value = id;
-      search = id.toLowerCase();
-      renderEvents();
-      document.getElementById("activity").scrollIntoView({ behavior: "smooth" });
     });
 
     // Live camera

@@ -192,17 +192,13 @@ input { caret-color: var(--green); }
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   min-width: 0; padding: 16px 0 12px;
   border: 1px solid var(--line); border-radius: var(--r);
-  background: var(--bg); cursor: pointer;
-  transition: border-color .2s, background-color .2s, transform .2s var(--ease-out);
+  background: var(--bg);
 }
-.lamp:hover { background: var(--bg-subtle); border-color: var(--line-strong); transform: translateY(-1px); }
-.lamp.is-selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 
 .lamp__light {
   position: relative; width: 20px; height: 20px; border-radius: 50%;
   background: var(--bg-muted);
   box-shadow: inset 0 0 0 1.5px var(--lamp-off);
-  transition: background .4s var(--ease-out), box-shadow .4s var(--ease-out);
 }
 .lamp__id { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink-2); line-height: 1; }
 .lamp__meta { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1; min-height: 11px; }
@@ -220,22 +216,11 @@ input { caret-color: var(--green); }
 .lamp.violation .lamp__light {
   background: var(--amber);
   box-shadow: 0 0 0 5px #fde7c2;
-  animation: lamp-warn 1.4s ease-in-out infinite;
 }
 .lamp.violation .lamp__id, .lamp.violation .lamp__meta { color: var(--amber-ink); }
 
-.lamp.changed.available .lamp__light { animation: lamp-on 1.1s var(--ease-out); }
-.lamp.changed.taken .lamp__light { animation: lamp-off .6s var(--ease-out); }
 
-@keyframes lamp-on {
-  0% { background: var(--lamp-off); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); transform: scale(.85); }
-  35% { box-shadow: 0 0 0 14px rgba(22, 163, 74, .16); transform: scale(1.12); }
-  100% { transform: scale(1); }
-}
-@keyframes lamp-off { 0% { transform: scale(1.1); } 100% { transform: scale(1); } }
-@keyframes lamp-warn { 50% { box-shadow: 0 0 0 9px rgba(224, 138, 11, .16); } }
 
-.lamps.is-loading .lamp__light { animation: shimmer-fade 1.2s ease-in-out infinite; }
 @keyframes shimmer-fade { 50% { opacity: .45; } }
 
 @media (max-width: 560px) {
@@ -295,19 +280,6 @@ input { caret-color: var(--green); }
 /* ---------------------------------------------------------------------------
    Segmented control
 --------------------------------------------------------------------------- */
-.segmented { position: relative; display: inline-flex; padding: 3px; border-radius: 10px; background: var(--bg-muted); }
-.segmented__thumb {
-  position: absolute; top: 3px; bottom: 3px; left: 3px; border-radius: 7px;
-  background: var(--bg); box-shadow: 0 1px 3px rgba(15, 23, 18, .12), 0 0 0 1px rgba(15, 23, 18, .04);
-  transition: transform .3s var(--ease-out), width .3s var(--ease-out);
-}
-.segmented button {
-  position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px;
-  height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: none;
-  font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: color .2s;
-}
-.segmented button[aria-pressed="true"] { color: var(--ink); }
-.segmented .icon { width: 15px; height: 15px; }
 
 /* ---------------------------------------------------------------------------
    Lot map (SVG drawn by lot.js)
@@ -327,48 +299,23 @@ input { caret-color: var(--green); }
 .lot .bay-post { stroke: var(--line-strong); stroke-width: 2; }
 .lot .lot-label { fill: var(--muted); font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .12em; }
 
-.lot .spot {
-  fill: var(--bg); stroke: var(--line-strong); stroke-width: 1.5; cursor: pointer;
-  transition: fill .4s var(--ease-out), stroke .4s var(--ease-out);
-}
-.lot .spot-g { cursor: pointer; outline: none; }
-.lot .spot-g:hover .spot { stroke: var(--ink-2); }
-.lot .spot-g:focus-visible .spot { stroke: var(--green); stroke-width: 3; }
+.lot .spot { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1.5; }
 .lot .spot.available { fill: var(--green-tint-2); stroke: var(--green); }
 .lot .spot.taken { fill: var(--bg-muted); stroke: var(--lamp-off); }
-.lot .spot.violation { fill: #fde7c2; stroke: var(--amber); animation: spot-warn 1.4s ease-in-out infinite; }
-.lot .spot.is-selected { stroke: var(--ink); stroke-width: 2.5; }
-.lot .spot.changed.available { animation: spot-on 1s var(--ease-out); }
+.lot .spot.violation { fill: #fde7c2; stroke: var(--amber); }
 
-.lot .spot-label { fill: var(--muted); pointer-events: none; transition: fill .4s var(--ease-out); }
+.lot .spot-label { fill: var(--muted); pointer-events: none; }
 .lot text.spot-label { font-family: var(--mono); font-size: 11px; font-weight: 500; }
 .lot .spot-g.available .spot-label { fill: var(--green-deep); }
 .lot .spot-g.violation .spot-label { fill: var(--amber-ink); }
 
-.lot.is-loading .spot { animation: shimmer-fade 1.2s ease-in-out infinite; }
 .lot .viol-link {
   fill: none; stroke: var(--amber); stroke-width: 2.5; stroke-dasharray: 7 5; stroke-linecap: round;
-  pointer-events: none; animation: link-march 1s linear infinite;
+  pointer-events: none;
 }
 
-@keyframes spot-on { 0% { fill: var(--bg-muted); } 40% { fill: #a6ecc0; } }
-@keyframes spot-warn { 50% { fill: #fbd38d; } }
-@keyframes link-march { to { stroke-dashoffset: -24; } }
 
 /* List view */
-.spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
-.spot-tile {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  border: 1px solid var(--line); border-radius: var(--r); background: var(--bg);
-  text-align: left; cursor: pointer; animation: tile-in .4s var(--ease-out) both;
-  transition: border-color .15s, background-color .15s;
-}
-.spot-tile:hover { background: var(--bg-subtle); border-color: var(--line-strong); }
-.spot-tile b { font-family: var(--mono); font-size: 14px; font-weight: 600; min-width: 30px; }
-.spot-tile > span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-.spot-tile i { font-style: normal; }
-.spot-tile.available { border-color: var(--green-tint-2); }
-.spot-tile.available i { color: var(--green-ink); font-weight: 500; }
 @keyframes tile-in { from { opacity: 0; transform: translateY(4px); } }
 
 /* ---------------------------------------------------------------------------
@@ -388,8 +335,6 @@ input { caret-color: var(--green); }
   background-size: 200% 100%; animation: skeleton 1.3s linear infinite;
 }
 @keyframes skeleton { to { background-position: -200% 0; } }
-.value-pop { animation: value-pop .5s var(--ease-out); }
-@keyframes value-pop { 30% { transform: translateY(-2px); } }
 
 /* ---------------------------------------------------------------------------
    Sheets (bottom sheet on mobile, dialog on desktop)
@@ -414,23 +359,6 @@ input { caret-color: var(--green); }
   .sheet__grip { display: block; width: 40px; height: 4px; border-radius: 99px; background: var(--line-strong); margin: 0 auto 16px; }
 }
 
-.spot-detail__head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding-right: 32px; }
-.spot-detail__id {
-  position: relative; display: grid; place-items: center; width: 64px; height: 64px; flex: none;
-  border: 1px solid var(--line); border-radius: 16px; background: var(--bg-subtle);
-  font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--ink-2);
-}
-.spot-detail__id::after {
-  content: ""; position: absolute; top: -5px; right: -5px; width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--bg); background: var(--lamp-off);
-}
-.spot-detail__id.available { background: var(--green-tint); border-color: var(--green-tint-2); color: var(--green-deep); }
-.spot-detail__id.available::after { background: var(--green); }
-.spot-detail__id.violation { background: var(--amber-tint); border-color: var(--amber-line); color: var(--amber-ink); }
-.spot-detail__id.violation::after { background: var(--amber); }
-.spot-detail__head h3 { font-size: 20px; margin-bottom: 6px; }
-.spot-detail p { font-size: 15px; }
-.spot-detail__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
 
 .notify { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .notify__mark { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--green-tint); color: var(--green-ink); margin-bottom: 16px; }
@@ -524,7 +452,6 @@ input { caret-color: var(--green); }
 .guest-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
 @media (max-width: 960px) { .guest-grid { grid-template-columns: 1fr; } }
 
-.map-panel .lot, .map-panel .spot-grid { margin-bottom: 4px; }
 
 /* Help */
 .help h2 { font-size: 17px; }
@@ -777,7 +704,7 @@ input { caret-color: var(--green); }
 
 .lamp__meta:empty { display: none; }
 @media (max-width: 560px) { .sign__num { min-width: 0; } }
-.lamp__id, .lamp__meta, .spot-id, .table td.muted, .camera__time, .chip .count, .badge, .search kbd, .spot-tile b, .spot-detail__id, .list-item__icon, .lot .spot-label { letter-spacing: -.03em; }
+.lamp__id, .lamp__meta, .spot-id, .table td.muted, .camera__time, .chip .count, .badge, .search kbd, .list-item__icon, .lot .spot-label { letter-spacing: -.03em; }
 .lamp__id { font-size: 11px; }
 .lot .spot-label { font-size: 11px; }
 @media (max-width: 560px) { .sign__actions > .btn { flex: none; } }
@@ -812,3 +739,4 @@ input { caret-color: var(--green); }
   .lamps .lamp:nth-child(2n):not(:last-child) { margin-right: 6px; }
   .lamp__light { width: 22px; height: 22px; }
 }
+
