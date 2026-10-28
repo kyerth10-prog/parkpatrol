@@ -764,3 +764,16 @@ input { caret-color: var(--green); }
 .error-page p { font-size: 16px; color: var(--muted); }
 .error-page__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
 .sign__num.is-unknown { color: var(--line-strong); }
+
+/* Sign-in landing page */
+.signin { min-height: 100vh; max-width: 440px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; justify-content: center; }
+.signin .brand { margin-bottom: 40px; }
+.signin h1 { font-size: clamp(2rem, 6vw, 2.6rem); line-height: 1.08; letter-spacing: -.04em; }
+.signin h1 span { color: var(--green); }
+.signin__lead { margin-top: 14px; font-size: 16px; color: var(--muted); }
+.signin__error { margin-top: 24px; padding: 12px 14px; border: 1px solid #fecdca; border-radius: var(--r); background: var(--red-tint); color: var(--red-ink); font-size: 14px; font-weight: 500; }
+.signin__btn { margin-top: 28px; }
+.signin__note { margin-top: 12px; font-size: 13px; color: var(--muted); text-align: center; }
+.signin__foot { margin-top: 48px; display: flex; gap: 10px; justify-content: center; font-size: 13px; color: var(--faint); }
+.signin__foot a { color: var(--muted); }
+.signin__foot a:hover { color: var(--ink); }

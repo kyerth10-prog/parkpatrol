@@ -41,6 +41,8 @@ GOOGLE_CLIENT_SECRET = require_env("GOOGLE_CLIENT_SECRET")
 SESSION_SECRET = require_env("SESSION_SECRET")
 TRACKER_API_KEY = require_env("TRACKER_API_KEY")
 ADMIN_EMAILS = {e.strip().lower() for e in require_env("ADMIN_EMAILS").split(",") if e.strip()}
+# Only Google accounts in this Workspace domain may view the lot (admins are always allowed)
+ALLOWED_DOMAIN = os.environ.get("ALLOWED_DOMAIN", "dlsl.edu.ph").strip().lower()
 ON_RENDER = bool(os.environ.get("RENDER"))
 BASE_URL = (os.environ.get("BASE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:8000").rstrip("/")
 HTTPS_ONLY = os.environ.get("HTTPS_ONLY", "true" if ON_RENDER else "false").lower() == "true"
@@ -132,6 +134,26 @@ def require_admin(request: Request):
     return email
 
 
+def signed_in(request: Request):
+    """The signed-in DLSL user (or admin), or None."""
+    return request.session.get("user_email") or request.session.get("admin_email")
+
+
+def require_user(request: Request):
+    email = signed_in(request)
+    if not email:
+        raise HTTPException(status_code=401, detail="Please sign in with your DLSL account.")
+    return email
+
+
+def is_dlsl_account(user):
+    """A verified Google account in the school's Google Workspace domain."""
+    email = (user.get("email") or "").lower()
+    return (bool(user.get("email_verified"))
+            and email.endswith("@" + ALLOWED_DOMAIN)
+            and (user.get("hd") or "").lower() == ALLOWED_DOMAIN)
+
+
 # ----------------------------------------------------------------------------
 # Public routes
 # ----------------------------------------------------------------------------
@@ -148,7 +170,10 @@ def public_view():
 
 
 @app.get("/")
-def public_page():
+def public_page(request: Request):
+    # Only signed-in DLSL accounts see the lot; everyone else gets the sign-in page
+    if not signed_in(request):
+        return FileResponse(BASE_DIR / "static" / "login.html")
     return FileResponse(BASE_DIR / "static" / "index.html")
 
 
@@ -163,15 +188,20 @@ def health():
 
 
 @app.get("/api/spots")
-def get_spots():
+def get_spots(_: str = Depends(require_user)):
     # "live" is false when the camera hasn't reported recently, so the page can say
     # the statuses are out of date instead of showing them as current
     return {"spots": public_view(), "live": tracker_is_live(), "updated": tracker_seen["time"]}
 
 
 @app.get("/api/notify")
-def notify_info():
+def notify_info(_: str = Depends(require_user)):
     return {"telegram_link": telegram_bot.link()}
+
+
+@app.get("/api/me")
+def me(request: Request, email: str = Depends(require_user)):
+    return {"email": email, "is_admin": email in ADMIN_EMAILS}
 
 
 # ----------------------------------------------------------------------------
@@ -411,35 +441,60 @@ def auth_base(request: Request):
     return BASE_URL
 
 
+async def google_signin(request: Request, next_page: str):
+    request.session["next"] = next_page
+    extra = {"prompt": "select_account"}
+    if next_page == "/":
+        extra["hd"] = ALLOWED_DOMAIN     # Google's account picker shows only DLSL accounts
+    return await oauth.google.authorize_redirect(request, f"{auth_base(request)}/auth", **extra)
+
+
+@app.get("/signin")
+async def signin(request: Request):
+    """Sign-in for everyone viewing the lot (DLSL accounts only)."""
+    return await google_signin(request, "/")
+
+
 @app.get("/login")
 async def login(request: Request):
-    return await oauth.google.authorize_redirect(request, f"{auth_base(request)}/auth")
+    """Sign-in for the admin console."""
+    return await google_signin(request, "/admin")
 
 
 @app.get("/auth")
 async def auth(request: Request):
+    next_page = request.session.pop("next", "/")
     try:
         token = await oauth.google.authorize_access_token(request)
     except OAuthError as error:
         print("Sign-in failed:", error)
         database.auth_event("login", ok=False)
+        if next_page == "/":
+            return RedirectResponse(url="/?error=failed")
         raise HTTPException(status_code=400, detail="Sign-in failed. Please try again.")
 
     user = token.get("userinfo") or {}
     email = (user.get("email") or "").lower()
-    if not user.get("email_verified"):
-        database.auth_event("login", ok=False)
-        raise HTTPException(status_code=403, detail="This Google account is not allowed.")
-    if email not in ADMIN_EMAILS:
-        database.auth_event("login", ok=False)
-        raise HTTPException(status_code=403, detail="This Google account is not allowed.")
+    is_admin = bool(user.get("email_verified")) and email in ADMIN_EMAILS
 
-    database.admin_login(user)
+    if next_page == "/admin" and not is_admin:
+        database.auth_event("login", ok=False)
+        raise HTTPException(status_code=403, detail="This Google account is not allowed.")
+    if next_page == "/" and not (is_dlsl_account(user) or is_admin):
+        database.auth_event("login", ok=False)
+        return RedirectResponse(url="/?error=domain")
+
     request.session.clear()
-    request.session["admin_email"] = email
-    request.session["admin_name"] = user.get("name")
-    request.session["admin_picture"] = user.get("picture")
-    return RedirectResponse(url="/admin")
+    request.session["user_email"] = email
+    if is_admin:
+        database.admin_login(user)
+        request.session["admin_email"] = email
+        request.session["admin_name"] = user.get("name")
+        request.session["admin_picture"] = user.get("picture")
+    else:
+        # Students and staff: only the outcome is logged, never who signed in
+        database.auth_event("login", ok=True)
+    return RedirectResponse(url=next_page)
 
 
 @app.get("/logout")

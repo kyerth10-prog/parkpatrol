@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=11">
+  <link rel="stylesheet" href="/static/ui.css?v=12">
 </head>
 <body class="guest has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -43,9 +43,13 @@
           <span class="live__dot" aria-hidden="true"></span>
           <span id="note">Connecting…</span>
         </span>
-        <a class="btn btn--ghost btn--sm hide-sm" href="/login">
+        <a class="btn btn--ghost btn--sm hide-sm" href="/admin" data-admin-only hidden>
           <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#login"></use></svg>
           Admin
+        </a>
+        <a class="btn btn--ghost btn--sm hide-sm" href="/logout">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#logout"></use></svg>
+          Sign out
         </a>
       </div>
     </div>
@@ -168,7 +172,8 @@
       <nav aria-label="Footer">
         <a href="#help">Help</a>
         <a href="/privacy">Privacy</a>
-        <a href="/login">Admin sign in</a>
+        <a href="/admin" data-admin-only hidden>Admin</a>
+        <a href="/logout">Sign out</a>
       </nav>
     </div>
   </footer>
@@ -178,7 +183,8 @@
     <a href="#overview"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#home"></use></svg>Overview</a>
     <a href="#map"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Map</a>
     <a href="#help"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#info"></use></svg>Help</a>
-    <a href="/login"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Admin</a>
+    <a href="/admin" data-admin-only hidden><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Admin</a>
+    <a href="/logout" data-not-admin><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#logout"></use></svg>Sign out</a>
   </nav>
 
   <!-- Parking rules -->
@@ -227,8 +233,8 @@
     </div>
   </div>
 
-  <script src="/static/ui.js?v=11"></script>
-  <script src="/static/lot.js?v=11"></script>
+  <script src="/static/ui.js?v=12"></script>
+  <script src="/static/lot.js?v=12"></script>
   <script>
     const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
@@ -261,6 +267,7 @@
     async function refresh() {
       try {
         const res = await fetch("/api/spots", { cache: "no-store" });
+        if (res.status === 401) { location.href = "/"; return; }   // session expired: back to sign-in
         if (!res.ok) throw new Error("bad response");
         const data = await res.json();
         if (wasOffline) UI.toast("Back online");
@@ -315,6 +322,16 @@
         if (err && err.name !== "AbortError") UI.toast("Couldn't share the link", { icon: "alert", tone: "warn" });
       }
     });
+
+    // Account: the Admin link only shows for admins
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (!me) return;
+        document.querySelectorAll("[data-admin-only]").forEach((el) => (el.hidden = !me.is_admin));
+        document.querySelectorAll("[data-not-admin]").forEach((el) => (el.hidden = me.is_admin));
+      })
+      .catch(() => {});
 
     // Notifications
     let notifyLink = null;

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Live parking availability at De La Salle Lipa.">
+  <title>Sign in · Park Patrol</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Park Patrol">
+  <meta property="og:title" content="Park Patrol · Live parking at De La Salle Lipa">
+  <meta property="og:description" content="See which spots in Lot A are free right now, before you drive in.">
+  <meta property="og:url" content="https://parkpatrol.onrender.com/">
+  <meta property="og:image" content="https://parkpatrol.onrender.com/static/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/ui.css?v=12">
+</head>
+<body class="guest">
+  <main class="signin">
+    <a class="brand" href="/" aria-label="Park Patrol home">
+      <svg class="brand__mark" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#0f1712"/><path d="M10.5 20V8.5h4.25a3.75 3.75 0 0 1 0 7.5H10.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20.5" cy="20.5" r="3" fill="#3fcf73"/></svg>
+      <span class="brand__text"><b>Park Patrol</b><small>De La Salle Lipa</small></span>
+    </a>
+
+    <h1>Find a free spot <span>before</span> you drive in.</h1>
+    <p class="signin__lead">Live parking availability for Lot A. Sign in with your DLSL account to continue.</p>
+
+    <p class="signin__error" id="error" role="alert" hidden></p>
+
+    <a class="btn btn--primary btn--lg btn--block signin__btn" href="/signin">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" stroke="none" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#fff" stroke="none" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" opacity=".85"/><path fill="#fff" stroke="none" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" opacity=".7"/><path fill="#fff" stroke="none" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z" opacity=".55"/></svg>
+      Sign in with your DLSL account
+    </a>
+    <p class="signin__note">Only <b>@dlsl.edu.ph</b> Google accounts can sign in.</p>
+
+    <footer class="signin__foot">
+      <a href="/privacy">Privacy</a>
+      <span aria-hidden="true">·</span>
+      <a href="/login">Admin sign in</a>
+    </footer>
+  </main>
+
+  <script>
+    const messages = {
+      domain: "That account isn't a DLSL account. Please sign in with your @dlsl.edu.ph Google account.",
+      failed: "Sign-in didn't complete. Please try again.",
+    };
+    const code = new URLSearchParams(location.search).get("error");
+    if (messages[code]) {
+      const box = document.getElementById("error");
+      box.textContent = messages[code];
+      box.hidden = false;
+    }
+  </script>
+</body>
+</html>
