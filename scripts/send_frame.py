@@ -1,5 +1,13 @@
-"""Camera frame uploader."""
+"""Camera frame uploader.
+
+CAMERA_SOURCE in .env picks the camera:
+  OBS Virtual Camera     a camera's name (or part of it) - recommended on a Mac,
+                         since camera numbers change when devices come and go
+  0, 1, 2 ...            a camera number
+  rtsp://... / http://   a network stream
+"""
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -19,7 +27,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 API_KEY = os.environ["TRACKER_API_KEY"]
 SERVER = os.environ.get("TRACKER_SERVER_URL", "http://localhost:8000").rstrip("/")
 SERVER_URL = f"{SERVER}/api/frame"
-CAMERA_SOURCE = os.environ.get("CAMERA_SOURCE", "1").strip()
+CAMERA_SOURCE = os.environ.get("CAMERA_SOURCE", "OBS Virtual Camera").strip()
 TARGET_FPS = float(os.environ.get("CAMERA_FPS", "15"))
 
 FRAME_WIDTH = int(os.environ.get("CAMERA_WIDTH", "640"))
@@ -31,15 +39,51 @@ STALE_AFTER = 5
 # ----------------------------------------------------------------------------
 # Video source
 # ----------------------------------------------------------------------------
-def open_source(source):
+CAPTURE_WIDTH, CAPTURE_HEIGHT = 1280, 720
+IS_MAC = sys.platform == "darwin"
+
+
+def camera_names():
+    """Camera names in the same order OpenCV numbers them (macOS only)."""
+    if not IS_MAC:
+        return []
+    try:
+        from AVFoundation import AVCaptureDevice, AVMediaTypeVideo
+    except ImportError:
+        print("Camera names need PyObjC: pip install -r requirements-camera.txt")
+        return []
+    return [str(d.localizedName()) for d in AVCaptureDevice.devicesWithMediaType_(AVMediaTypeVideo)]
+
+
+def resolve(source):
+    """Turn CAMERA_SOURCE into what OpenCV opens: a camera number or a stream URL."""
     if source.isdigit():
-        cap = cv2.VideoCapture(int(source))
-        if not cap.isOpened() and source != "0":
-            cap = cv2.VideoCapture(0)
+        return int(source), f"camera {source}"
+    if "://" in source:
+        return source, source
+    names = camera_names()
+    for index, name in enumerate(names):
+        if source.lower() in name.lower():
+            return index, f"{name} (camera {index})"
+    found = ", ".join(names) or "none"
+    print(f'No camera named "{source}". Cameras found: {found}')
+    if "obs" in source.lower():
+        print("In OBS, click Start Virtual Camera (Controls panel, bottom right).")
+    return None, source
+
+
+def open_source(source):
+    target, label = resolve(source)
+    if target is None:
+        return None, label
+    if isinstance(target, int):
+        cap = cv2.VideoCapture(target, cv2.CAP_AVFOUNDATION if IS_MAC else cv2.CAP_ANY)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
     else:
-        cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
+        cap = cv2.VideoCapture(target, cv2.CAP_FFMPEG)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    return cap
+    return cap, label
 
 
 class FrameReader:
@@ -53,15 +97,20 @@ class FrameReader:
 
     def _run(self):
         while True:
-            cap = open_source(self.source)
-            if not cap.isOpened():
-                print(f"Source unavailable: {self.source}. Retrying...")
+            cap, label = open_source(self.source)
+            if cap is None or not cap.isOpened():
+                print(f"Source unavailable: {label}. Retrying...")
+                if IS_MAC and cap is not None:
+                    print("  If this repeats, allow camera access for your terminal app in "
+                          "System Settings > Privacy & Security > Camera.")
+                if cap is not None:
+                    cap.release()
                 time.sleep(RECONNECT_DELAY)
                 continue
 
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            print(f"Connected to {self.source} ({width}x{height})")
+            print(f"Connected to {label} ({width}x{height})")
 
             while True:
                 ok, frame = cap.read()
@@ -101,6 +150,13 @@ def encode(frame):
 # ----------------------------------------------------------------------------
 # Upload loop
 # ----------------------------------------------------------------------------
+if "--list" in sys.argv:
+    names = camera_names()
+    print("Cameras:" if names else "No cameras found (or listing is only supported on macOS).")
+    for index, name in enumerate(names):
+        print(f"  {index}: {name}")
+    raise SystemExit
+
 reader = FrameReader(CAMERA_SOURCE)
 session = requests.Session()
 session.headers["X-API-Key"] = API_KEY
@@ -115,7 +171,8 @@ while True:
     if frame is None:
         frame = test_frame()
     elif not warned_black and frame.max() < 10:
-        print("Warning: source is returning blank frames.")
+        print("Warning: source is returning blank frames. In OBS, check the phone source is "
+              "showing in the preview and that Start Virtual Camera is on.")
         warned_black = True
 
     try:

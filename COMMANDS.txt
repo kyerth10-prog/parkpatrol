@@ -36,29 +36,19 @@ Local:          http://localhost:8000
 Local admin:    http://localhost:8000/admin   (smoothest video, no internet data)
 
 
-CAMERA STREAM (LAPTOP B - WINDOWS)
-----------------------------------
-1. Download and unzip MediaMTX:
-   https://github.com/bluenviron/mediamtx/releases/download/v1.21.2/mediamtx_v1.21.2_windows_amd64.zip
-2. Run mediamtx.exe (allow access on Private networks when Windows Firewall asks)
-3. OBS > Settings > Stream
-     Service:     Custom...
-     Server:      rtmp://localhost/
-     Stream Key:  lot
-4. OBS > Settings > Output (Output Mode: Advanced) > Streaming
-     Encoder:            x264 (or NVIDIA NVENC / QuickSync if available)
-     Rate Control:       CBR, Bitrate 2500 Kbps
-     Keyframe Interval:  1 s
-     CPU Usage Preset:   veryfast, Tune: zerolatency
-5. OBS > Settings > Video
-     Output Resolution:  1280x720, FPS: 15
-6. OBS > Start Streaming
-7. Get laptop B's IP address (Command Prompt):
-     ipconfig        ->  "IPv4 Address" under Wi-Fi
-8. On the MacBook, set in .env:
-     CAMERA_SOURCE=rtsp://LAPTOP_B_IP:8554/lot
-9. On the MacBook, start the camera feed:
-     python scripts/send_frame.py
+CAMERA (EVERYTHING ON THE MAC: PHONE -> OBS -> VIRTUAL CAMERA)
+-------------------------------------------------------------
+1. Open OBS. In Sources, add your phone (e.g. "Video Capture Device" ->
+   your iPhone, or your phone camera app's source) and frame the diorama.
+2. OBS > Settings > Video: Base and Output resolution 1280x720, FPS 15.
+3. Click "Start Virtual Camera" (Controls panel, bottom right).
+4. In .env:                 CAMERA_SOURCE=OBS Virtual Camera
+   (picked by name, so it still works when other cameras connect)
+5. Start the camera feed:   python scripts/send_frame.py
+List cameras the script sees:  python scripts/send_frame.py --list
+First run: macOS asks to allow camera access for your terminal app. Allow it
+(System Settings > Privacy & Security > Camera).
+No OBS streaming, MediaMTX, or second laptop needed anymore.
 
 
 DATABASE (XAMPP MySQL)
@@ -102,7 +92,7 @@ Never commit it or store it in the database.
 
 OPTIONAL .env SETTINGS
 ----------------------
-CAMERA_SOURCE=1             camera number, or a stream link (rtsp://...)
+CAMERA_SOURCE=...           camera name (OBS Virtual Camera), number, or rtsp:// link
 CAMERA_FPS=15               frames per second sent to the server
 CAMERA_WIDTH=640            frame width in pixels (larger = sharper, more data)
 NOTIFY_COOLDOWN_MINUTES=0   no cooldown between subscriber notifications (rehearsals)
