@@ -122,3 +122,18 @@ CAMERA_FPS=15               frames per second sent to the server
 CAMERA_WIDTH=640            frame width in pixels (larger = sharper, more data)
 NOTIFY_COOLDOWN_MINUTES=0   no cooldown between subscriber notifications (rehearsals)
 TRACKER_SERVER_URL=...      server address used by the scripts (default http://localhost:8000)
+
+
+LOT MAP DESIGN (FIGMA)
+----------------------
+The lot map on the website is drawn from static/lot-map.svg, designed in Figma.
+1. Import:  drag static/lot-map.svg onto a Figma canvas (it becomes editable layers).
+2. Design:  change anything - colours, road, park, trees, gazebo, labels.
+            Keep the six spot layers named exactly A1 ... A6 (A1 = top spot),
+            one layer (or group) per spot. Their live colours come from the website.
+3. Export:  select the top frame > Export > SVG, and under the export options
+            check "Include 'id' attribute" (keeps the A1..A6 names).
+4. Replace static/lot-map.svg with the exported file, then publish:
+            git add -A && git commit -m "Update lot map design" && git push
+Check locally first with python main.py and open http://localhost:8000.
+If a spot layer is missing or renamed, the browser console says which one.

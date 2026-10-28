@@ -331,17 +331,19 @@ input { caret-color: var(--green); }
   fill: var(--bg); stroke: var(--line-strong); stroke-width: 1.5; cursor: pointer;
   transition: fill .4s var(--ease-out), stroke .4s var(--ease-out);
 }
-.lot .spot:hover { stroke: var(--ink-2); }
-.lot .spot:focus-visible { outline: none; stroke: var(--green); stroke-width: 3; }
+.lot .spot-g { cursor: pointer; outline: none; }
+.lot .spot-g:hover .spot { stroke: var(--ink-2); }
+.lot .spot-g:focus-visible .spot { stroke: var(--green); stroke-width: 3; }
 .lot .spot.available { fill: var(--green-tint-2); stroke: var(--green); }
 .lot .spot.taken { fill: var(--bg-muted); stroke: var(--lamp-off); }
 .lot .spot.violation { fill: #fde7c2; stroke: var(--amber); animation: spot-warn 1.4s ease-in-out infinite; }
 .lot .spot.is-selected { stroke: var(--ink); stroke-width: 2.5; }
 .lot .spot.changed.available { animation: spot-on 1s var(--ease-out); }
 
-.lot .spot-label { fill: var(--muted); font-family: var(--mono); font-size: 12px; font-weight: 500; pointer-events: none; }
-.lot .spot.available + .spot-label { fill: var(--green-deep); }
-.lot .spot.violation + .spot-label { fill: var(--amber-ink); }
+.lot .spot-label { fill: var(--muted); pointer-events: none; transition: fill .4s var(--ease-out); }
+.lot text.spot-label { font-family: var(--mono); font-size: 11px; font-weight: 500; }
+.lot .spot-g.available .spot-label { fill: var(--green-deep); }
+.lot .spot-g.violation .spot-label { fill: var(--amber-ink); }
 
 .lot.is-loading .spot { animation: shimmer-fade 1.2s ease-in-out infinite; }
 .lot .viol-link {
