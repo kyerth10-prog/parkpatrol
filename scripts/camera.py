@@ -41,15 +41,23 @@ IS_MAC = sys.platform == "darwin"
 # Video source
 # ----------------------------------------------------------------------------
 def camera_names():
-    """Camera names in the same order OpenCV numbers them (macOS only)."""
+    """Camera names in the same order OpenCV numbers them (macOS only).
+
+    OpenCV's macOS backend lists video and muxed devices, then sorts them by
+    their uniqueID before numbering, so this does exactly the same. (macOS's own
+    order differs once extra cameras, such as an iPhone, are connected.)
+    """
     if not IS_MAC:
         return []
     try:
-        from AVFoundation import AVCaptureDevice, AVMediaTypeVideo
+        from AVFoundation import AVCaptureDevice, AVMediaTypeMuxed, AVMediaTypeVideo
     except ImportError:
         print("Camera names need PyObjC: pip install -r requirements-camera.txt")
         return []
-    return [str(d.localizedName()) for d in AVCaptureDevice.devicesWithMediaType_(AVMediaTypeVideo)]
+    devices = list(AVCaptureDevice.devicesWithMediaType_(AVMediaTypeVideo)) + \
+        list(AVCaptureDevice.devicesWithMediaType_(AVMediaTypeMuxed))
+    devices.sort(key=lambda d: str(d.uniqueID()))
+    return [str(d.localizedName()) for d in devices]
 
 
 def list_cameras():
@@ -57,6 +65,8 @@ def list_cameras():
     print("Cameras:" if names else "No cameras found (or listing is only supported on macOS).")
     for index, name in enumerate(names):
         print(f"  {index}: {name}")
+    if names:
+        print("If the wrong camera opens, put its number in .env, e.g. CAMERA_SOURCE=1")
 
 
 def resolve(source):
