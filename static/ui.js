@@ -100,6 +100,9 @@ const UI = (() => {
     if (e.target.closest("[data-drawer-close]")) document.body.classList.remove("drawer-open");
     if (e.target.closest(".sidebar a[href^='#']")) document.body.classList.remove("drawer-open");
 
+    const sheetOpen = e.target.closest("[data-sheet-open]");
+    if (sheetOpen) sheet.open(sheetOpen.dataset.sheetOpen);
+
     const sheetClose = e.target.closest("[data-sheet-close]");
     if (sheetClose) sheet.close(sheetClose.closest(".sheet"));
   });

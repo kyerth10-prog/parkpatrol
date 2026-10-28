@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=9">
+  <link rel="stylesheet" href="/static/ui.css?v=10">
 </head>
 <body class="guest has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -130,7 +130,7 @@
             <div>
               <h3>Parking rules</h3>
               <p>Park inside the lines and never double-park. Violations are flagged to campus security automatically.</p>
-              <button class="link-btn" type="button" data-soon="Full parking guidelines">
+              <button class="link-btn" type="button" data-sheet-open="rules-sheet">
                 Read guidelines
                 <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#chevron-right"></use></svg>
               </button>
@@ -140,11 +140,11 @@
             <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#phone"></use></svg>
             <div>
               <h3>Need help?</h3>
-              <p>Blocked in or spotted a problem? Reach the security office directly.</p>
-              <button class="link-btn" type="button" data-soon="Contact security">
-                Contact security
+              <p>Blocked in or spotted a problem? Call the security guard on duty.</p>
+              <a class="link-btn" href="tel:+639919490075">
+                Call security: 0991 949 0075
                 <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#chevron-right"></use></svg>
-              </button>
+              </a>
             </div>
           </li>
         </ul>
@@ -171,6 +171,29 @@
     <a href="/login"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Admin</a>
   </nav>
 
+  <!-- Parking rules -->
+  <div class="sheet" id="rules-sheet" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="sheet__scrim" data-sheet-close></div>
+    <div class="sheet__panel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <button class="icon-btn icon-btn--sm sheet__close" type="button" data-sheet-close aria-label="Close">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#x"></use></svg>
+      </button>
+      <div class="rules">
+        <h3 id="rules-title">Parking guidelines</h3>
+        <ol>
+          <li>Park inside the marked lines, one vehicle per spot.</li>
+          <li>No double parking. A car covering two spots is flagged to security.</li>
+          <li>Follow the direction arrows and drive slowly inside the lot.</li>
+          <li>Give way to pedestrians, especially at crosswalks.</li>
+          <li>Turn off your engine once parked and don't block other cars.</li>
+          <li>Lock your vehicle and keep valuables out of sight.</li>
+        </ol>
+        <p class="rules__help">Need help? Call security: <a href="tel:+639919490075">0991 949 0075</a></p>
+      </div>
+    </div>
+  </div>
+
   <!-- Notify sheet -->
   <div class="sheet" id="notify-sheet" role="dialog" aria-modal="true" aria-labelledby="notify-title">
     <div class="sheet__scrim" data-sheet-close></div>
@@ -194,8 +217,8 @@
     </div>
   </div>
 
-  <script src="/static/ui.js?v=9"></script>
-  <script src="/static/lot.js?v=9"></script>
+  <script src="/static/ui.js?v=10"></script>
+  <script src="/static/lot.js?v=10"></script>
   <script>
     const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
