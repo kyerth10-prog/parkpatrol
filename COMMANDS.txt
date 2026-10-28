@@ -17,7 +17,8 @@ RUN
 Activate environment:       source .venv/bin/activate
 Start server (local):       python main.py
 Start server + public URL:  ./scripts/start_public.sh   (old ngrok setup)
-Start camera feed:          python scripts/send_frame.py
+Start camera + detection:   python scripts/tracker.py   (setup: --calibrate)
+Video only (no detection):  python scripts/send_frame.py
 Simulate tracker:           python scripts/test_tracker.py
 Notification demo:          python scripts/demo_notify.py
 
@@ -49,6 +50,30 @@ List cameras the script sees:  python scripts/send_frame.py --list
 First run: macOS asks to allow camera access for your terminal app. Allow it
 (System Settings > Privacy & Security > Camera).
 No OBS streaming, MediaMTX, or second laptop needed anymore.
+
+
+SPOT DETECTION (scripts/tracker.py)
+-----------------------------------
+One-time setup (redo if the camera or diorama moves):
+1. python scripts/tracker.py --calibrate
+2. Click the 4 corners of the covered parking, in this order:
+     1. A1 end, road side     2. A1 end, back
+     3. A6 end, back          4. A6 end, road side
+   The 6 spot boxes appear; check they sit on the real spots (R = redo).
+3. Remove ALL cars, then press E (saves corners + empty-lot snapshot). Q to quit.
+
+Run (this replaces send_frame.py - it detects AND sends the video):
+  python scripts/tracker.py           report spots to the website
+  python scripts/tracker.py --show    same, plus a live window with scores
+A car must stay put ~1.5 s before it is reported. A car covering a bay's
+yellow line is reported as double parking for both spots in that bay.
+
+Tuning (only if detection is wrong): edit "thresholds" in
+data/lot_calibration.json while watching --show:
+  spot          lower = more sensitive to cars (shown next to each spot)
+  edges         lower = catches dark cars more easily
+  yellow_ratio  higher = flags double parking sooner
+If the room lighting changes a lot, retake the empty snapshot (step 3).
 
 
 DATABASE (XAMPP MySQL)
