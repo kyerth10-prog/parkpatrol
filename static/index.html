@@ -6,10 +6,20 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Live parking availability at De La Salle Lipa.">
   <title>Park Patrol · DLSL Parking</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Park Patrol">
+  <meta property="og:title" content="Park Patrol · Live parking at De La Salle Lipa">
+  <meta property="og:description" content="See which spots in Lot A are free right now, before you drive in.">
+  <meta property="og:url" content="https://parkpatrol.onrender.com/">
+  <meta property="og:image" content="https://parkpatrol.onrender.com/static/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=10">
+  <link rel="stylesheet" href="/static/ui.css?v=11">
 </head>
 <body class="guest has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -157,7 +167,7 @@
       <span>© De La Salle Lipa · Park Patrol</span>
       <nav aria-label="Footer">
         <a href="#help">Help</a>
-        <a href="#" data-soon="Privacy notice">Privacy</a>
+        <a href="/privacy">Privacy</a>
         <a href="/login">Admin sign in</a>
       </nav>
     </div>
@@ -217,22 +227,47 @@
     </div>
   </div>
 
-  <script src="/static/ui.js?v=10"></script>
-  <script src="/static/lot.js?v=10"></script>
+  <script src="/static/ui.js?v=11"></script>
+  <script src="/static/lot.js?v=11"></script>
   <script>
     const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
     const note = document.getElementById("note");
     const live = document.getElementById("live");
     const count = document.getElementById("count");
-    let spots = {};
     let wasOffline = false;
+    const clock = (ts) => new Date(ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+    // The camera stopped reporting: say so instead of showing old statuses as current
+    function showCameraOffline(updated) {
+      lot.update({});
+      lamps.update({}, {}, {});
+      const freeEl = document.getElementById("free");
+      freeEl.classList.remove("skeleton");
+      freeEl.classList.add("is-unknown");
+      freeEl.textContent = "–";
+      for (const id of ["s-free", "s-taken", "s-occ"]) document.getElementById(id).textContent = "–";
+      document.getElementById("status-word").textContent = "Camera offline";
+      count.textContent = updated
+        ? "Spot status isn't live right now. Last update at " + clock(updated) + "."
+        : "Spot status isn't available right now. Please check back soon.";
+      document.getElementById("capacity").textContent = "—";
+      document.getElementById("meter-fill").style.width = "0%";
+      document.getElementById("meter").removeAttribute("aria-valuenow");
+      note.textContent = updated ? "Offline · " + clock(updated) : "Offline";
+      live.classList.add("is-offline");
+    }
 
     async function refresh() {
       try {
         const res = await fetch("/api/spots", { cache: "no-store" });
         if (!res.ok) throw new Error("bad response");
-        spots = await res.json();
+        const data = await res.json();
+        if (wasOffline) UI.toast("Back online");
+        wasOffline = false;
+        if (!data.live) { showCameraOffline(data.updated); return; }
+
+        const spots = data.spots;
         lot.update(spots);
         lamps.update(spots, {}, { available: "available", taken: "taken" });
 
@@ -242,6 +277,7 @@
         const pct = total ? Math.round((free / total) * 100) : 0;
 
         const freeEl = document.getElementById("free");
+        freeEl.classList.remove("is-unknown");
         UI.count(freeEl, free);
         freeEl.classList.toggle("is-full", free === 0);
         UI.count(document.getElementById("s-free"), free);
@@ -258,10 +294,8 @@
         document.getElementById("status-word").textContent =
           free === 0 ? "Lot is full" : pct <= 20 ? "Almost full" : pct <= 50 ? "Filling up" : "Plenty of space";
 
-        note.textContent = "Live · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        note.textContent = "Live · " + clock(Date.now() / 1000);
         live.classList.remove("is-offline");
-        if (wasOffline) UI.toast("Back online");
-        wasOffline = false;
       } catch (error) {
         note.textContent = "Reconnecting…";
         live.classList.add("is-offline");

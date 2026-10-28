@@ -140,6 +140,14 @@ def _migrate(cur):
                     "DROP COLUMN ip_address, DROP COLUMN user_agent, DROP COLUMN detail")
         print("Database: sign-in log reduced to ok / invalid")
 
+    # Violations can be marked as handled by security
+    if "resolved_at" not in _columns(cur, "violations"):
+        cur.execute("ALTER TABLE violations ADD COLUMN resolved_at DATETIME(3) NULL, "
+                    "ADD COLUMN resolved_by INT UNSIGNED NULL, "
+                    "ADD CONSTRAINT fk_violations_resolver FOREIGN KEY (resolved_by) "
+                    "REFERENCES admins (id) ON DELETE SET NULL")
+        print("Database: violations can now be marked as resolved")
+
     old_admins = "email" in _columns(cur, "admins")
     old_subscribers = "chat_id" in _columns(cur, "telegram_subscribers")
     old_snapshots = "snapshot" in _columns(cur, "violations")
@@ -295,6 +303,33 @@ def load_spots():
         return {}
 
 
+def _events(where, params, limit):
+    try:
+        with _reader() as cur:
+            if cur is None:
+                return None
+            cur.execute(
+                f"""SELECT spot_id, from_status, to_status, created_at FROM spot_events
+                    {where} ORDER BY created_at DESC, id DESC LIMIT %s""",
+                (*params, limit),
+            )
+            return [{"spot_id": spot, "from": old, "to": new, "time": when.timestamp()}
+                    for spot, old, new, when in cur.fetchall()]
+    except pymysql.MySQLError as error:
+        print("Database error:", error)
+        return None
+
+
+def recent_events(limit=100):
+    """The newest spot changes, newest first (empty if MySQL is unavailable)."""
+    return (_events("", (), limit) or []) if ENABLED else []
+
+
+def events_since(ts, limit=20000):
+    """Spot changes since a time, newest first; None if MySQL is unavailable."""
+    return _events("WHERE created_at >= %s", (_dt(ts),), limit) if ENABLED else None
+
+
 # ----------------------------------------------------------------------------
 # Admins and sign-in
 # ----------------------------------------------------------------------------
@@ -443,6 +478,20 @@ def violation_cleared(spot_ids, started_at, cleared_at):
             violation_id = row[0]
         cur.execute("UPDATE violations SET cleared_at = %s, duration_seconds = %s WHERE id = %s",
                     (_dt(cleared_at), max(0, int(cleared_at - started_at)), violation_id))
+
+    _submit(job)
+
+
+def violation_resolved(spot_ids, started_at, admin_email):
+    key = _key(spot_ids, started_at)
+    now = datetime.now()
+
+    def job(cur):
+        violation_id = _violation_ids.get(key) or _last_violation_id(cur, spot_ids)
+        if violation_id is None:
+            return
+        cur.execute("UPDATE violations SET resolved_at = %s, resolved_by = %s WHERE id = %s AND resolved_at IS NULL",
+                    (now, _admin_id(cur, admin_email), violation_id))
 
     _submit(job)
 

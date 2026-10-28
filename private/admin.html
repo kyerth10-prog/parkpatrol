@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>Park Patrol · Admin</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/static/ui.css?v=10">
+  <link rel="stylesheet" href="/static/ui.css?v=11">
 </head>
 <body class="admin has-tabbar">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -32,12 +33,6 @@
         <a class="navlink" href="#map"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#map"></use></svg>Lot map</a>
         <a class="navlink" href="#violations"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#alert"></use></svg>Violations<span class="badge is-empty" data-viol-badge>0</span></a>
         <a class="navlink" href="#activity"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>Activity</a>
-      </nav>
-
-      <p class="sidebar__section">Coming soon</p>
-      <nav class="sidebar__nav">
-        <button class="navlink" type="button" data-soon="Reports"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#chart"></use></svg>Reports<span class="tag">Soon</span></button>
-        <button class="navlink" type="button" data-soon="Lot settings"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>Settings<span class="tag">Soon</span></button>
       </nav>
 
       <div class="sidebar__foot">
@@ -82,9 +77,6 @@
             </button>
             <div class="menu" role="menu">
               <div class="menu__header"><b>Signed in as</b><strong id="who-name" hidden></strong><span id="who">…</span></div>
-              <button class="menu__item" type="button" role="menuitem" data-soon="Profile"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#user"></use></svg>Profile</button>
-              <button class="menu__item" type="button" role="menuitem" data-soon="Notification preferences"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#bell"></use></svg>Notifications</button>
-              <button class="menu__item" type="button" role="menuitem" data-soon="Settings"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#sliders"></use></svg>Settings</button>
               <div class="menu__sep"></div>
               <a class="menu__item" role="menuitem" href="/" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#home"></use></svg>Open public page</a>
               <a class="menu__item menu__item--danger" role="menuitem" href="/logout"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#logout"></use></svg>Sign out</a>
@@ -250,8 +242,8 @@
     <a href="#activity"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#activity"></use></svg>Activity</a>
   </nav>
 
-  <script src="/static/ui.js?v=10"></script>
-  <script src="/static/lot.js?v=10"></script>
+  <script src="/static/ui.js?v=11"></script>
+  <script src="/static/lot.js?v=11"></script>
   <script>
     const lot = LOT.render(document.getElementById("lot"));
     const lamps = UI.lamps(document.getElementById("lamps"), lot.ids);
@@ -328,8 +320,9 @@
           viol++;
           const group = s.group || [id];
           const key = group.join("+");
-          const entry = incidents.get(key) || { key, ids: group, since: s.since };
+          const entry = incidents.get(key) || { key, ids: group, since: s.since, resolvedBy: null };
           entry.since = Math.min(entry.since, s.since);
+          entry.resolvedBy = entry.resolvedBy || s.resolved_by;
           incidents.set(key, entry);
         }
       }
@@ -437,19 +430,50 @@
             <div class="list-item__body"><b>Double-parked</b><span></span></div>
             <div class="list-item__actions">
               <button class="btn btn--sm" type="button" data-alert>${UI.icon("bell")}Alert</button>
-              <button class="btn btn--sm btn--soft" type="button" data-soon="Mark as resolved">${UI.icon("check")}Resolve</button>
+              <button class="btn btn--sm btn--soft" type="button" data-resolve>${UI.icon("check")}<span>Resolve</span></button>
             </div>`;
           const icon = row.querySelector(".list-item__icon");
           icon.textContent = v.ids.join("+");
           icon.classList.toggle("list-item__icon--multi", v.ids.length > 1);
           if (v.ids.length > 1) row.querySelector(".list-item__body b").textContent = "Double-parked across " + v.ids.length + " spots";
           row.querySelector("[data-alert]").dataset.alert = v.ids[0];
+          row.querySelector("[data-resolve]").dataset.resolve = v.ids[0];
           box.appendChild(row);
         }
         row.querySelector(".list-item__body span").textContent =
-          (v.ids.length > 1 ? "Spots " : "Spot ") + v.ids.join(" + ") + " · for " + minutes(v.for);
+          (v.ids.length > 1 ? "Spots " : "Spot ") + v.ids.join(" + ") + " · for " + minutes(v.for) +
+          (v.resolvedBy ? " · handled by " + v.resolvedBy : "");
+        const resolveBtn = row.querySelector("[data-resolve]");
+        resolveBtn.disabled = Boolean(v.resolvedBy);
+        resolveBtn.querySelector("span").textContent = v.resolvedBy ? "Resolved" : "Resolve";
       }
     }
+
+    // Mark as resolved (security has handled it; spots stay amber until the car moves)
+    document.getElementById("viol").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-resolve]");
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/admin/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ spot_id: btn.dataset.resolve }),
+        });
+        if (res.status === 401) { location.href = "/login"; return; }
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          btn.querySelector("span").textContent = "Resolved";
+          UI.toast("Marked as resolved");
+        } else {
+          btn.disabled = false;
+          UI.toast(data.detail || "Couldn't mark it as resolved", { icon: "alert", tone: "warn" });
+        }
+      } catch (error) {
+        btn.disabled = false;
+        UI.toast("Couldn't reach the server", { icon: "alert", tone: "warn" });
+      }
+    });
 
     // Security alert
     document.getElementById("viol").addEventListener("click", async (e) => {
@@ -539,21 +563,12 @@
       }
     });
 
-    // CSV export
+    // CSV export: today's full history from the database
     document.getElementById("export").addEventListener("click", () => {
-      const rows = visibleEvents();
-      if (!rows.length) { UI.toast("Nothing to export yet", { icon: "info" }); return; }
-      const lines = [["time", "spot", "from", "to"]].concat(
-        rows.map((ev) => [new Date(ev.time * 1000).toISOString(), ev.spot_id, ev.from, ev.to])
-      );
-      const csv = lines.map((l) => l.join(",")).join("\n");
-      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "parkpatrol-events-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.href = "/api/admin/events.csv";
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      UI.toast("Exported " + rows.length + " events");
+      UI.toast("Downloading today's events");
     });
 
     // Live camera

@@ -80,7 +80,10 @@ CREATE TABLE IF NOT EXISTS violations (
   cleared_at  DATETIME(3) NULL,
   duration_seconds INT UNSIGNED NULL,
   snapshot_enc MEDIUMBLOB NULL COMMENT 'Camera frame when it started, AES-256-GCM encrypted',
-  INDEX idx_violations_started (started_at)
+  resolved_at DATETIME(3) NULL COMMENT 'When security marked it as handled',
+  resolved_by INT UNSIGNED NULL COMMENT 'Admin who marked it as handled',
+  INDEX idx_violations_started (started_at),
+  CONSTRAINT fk_violations_resolver FOREIGN KEY (resolved_by) REFERENCES admins (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS violation_spots (

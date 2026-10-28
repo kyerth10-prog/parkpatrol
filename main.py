@@ -1,5 +1,6 @@
 """Park Patrol web server."""
 import asyncio
+import html
 import os
 import secrets
 import subprocess
@@ -12,7 +13,9 @@ from typing import List, Optional
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -132,6 +135,11 @@ def require_admin(request: Request):
 # ----------------------------------------------------------------------------
 # Public routes
 # ----------------------------------------------------------------------------
+def tracker_is_live():
+    last = tracker_seen["time"]
+    return last is not None and time.time() - last <= TRACKER_TIMEOUT
+
+
 def public_view():
     return {
         spot_id: "available" if status == "VACANT" else "taken"
@@ -144,6 +152,11 @@ def public_page():
     return FileResponse(BASE_DIR / "static" / "index.html")
 
 
+@app.get("/privacy")
+def privacy_page():
+    return FileResponse(BASE_DIR / "static" / "privacy.html")
+
+
 @app.get("/healthz")
 def health():
     return {"ok": True}
@@ -151,7 +164,9 @@ def health():
 
 @app.get("/api/spots")
 def get_spots():
-    return public_view()
+    # "live" is false when the camera hasn't reported recently, so the page can say
+    # the statuses are out of date instead of showing them as current
+    return {"spots": public_view(), "live": tracker_is_live(), "updated": tracker_seen["time"]}
 
 
 @app.get("/api/notify")
@@ -293,6 +308,7 @@ def admin_state(request: Request, admin: str = Depends(require_admin)):
                 "status": statuses[spot_id],
                 "since": since[spot_id],
                 "group": list(violation_groups[spot_id]) if spot_id in violation_groups else None,
+                "resolved_by": violation_info(spot_id).get("resolved_by"),
             }
             for spot_id in SPOT_IDS
         },
@@ -335,12 +351,48 @@ async def admin_stream(request: Request, fps: float = 15, admin: str = Depends(r
     )
 
 
+def violation_info(spot_id):
+    group = violation_groups.get(spot_id)
+    return group_info.get(group, {}) if group else {}
+
+
+def active_violation(spot_id):
+    if statuses.get(spot_id) != VIOLATION:
+        raise HTTPException(status_code=400, detail="That spot has no active violation.")
+    group = violation_groups.get(spot_id, (spot_id,))
+    return group, group_info.get(group, {}).get("started", since[spot_id])
+
+
+@app.post("/api/admin/resolve")
+def admin_resolve(body: AlertRequest, admin: str = Depends(require_admin)):
+    """Security marks a violation as handled. The spots stay amber until the car moves."""
+    group, started = active_violation(body.spot_id)
+    info = group_info.setdefault(group, {"started": started, "origin": group})
+    if not info.get("resolved_by"):
+        info["resolved_by"] = admin
+        database.violation_resolved(list(group), started, admin)
+    return {"ok": True}
+
+
+@app.get("/api/admin/events.csv")
+def admin_events_csv(admin: str = Depends(require_admin)):
+    """Today's spot changes from the database (falls back to recent ones in memory)."""
+    midnight = time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1))
+    rows = database.events_since(midnight)
+    if rows is None:
+        rows = [e for e in events if e["time"] >= midnight]
+    lines = ["time,spot,from,to"] + [
+        f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e["time"]))},{e["spot_id"]},{e["from"]},{e["to"]}'
+        for e in sorted(rows, key=lambda e: e["time"])
+    ]
+    name = "parkpatrol-events-" + time.strftime("%Y-%m-%d") + ".csv"
+    return Response("\n".join(lines) + "\n", media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})
+
+
 @app.post("/api/admin/alert")
 def admin_alert(body: AlertRequest, admin: str = Depends(require_admin)):
-    if statuses.get(body.spot_id) != VIOLATION:
-        raise HTTPException(status_code=400, detail="That spot has no active violation.")
-    group = violation_groups.get(body.spot_id, (body.spot_id,))
-    started = group_info.get(group, {}).get("started", since[body.spot_id])
+    group, started = active_violation(body.spot_id)
     ok, error = telegram_alerts.manual_alert(
         list(group), started, latest_frame["jpeg"], admin, BASE_URL
     )
@@ -400,6 +452,35 @@ def logout(request: Request):
 
 
 # ----------------------------------------------------------------------------
+# Error pages: API calls keep JSON errors; people in a browser get a page
+# ----------------------------------------------------------------------------
+ERROR_TITLES = {
+    400: "Something went wrong",
+    401: "Please sign in",
+    403: "Access denied",
+    404: "Page not found",
+}
+ERROR_HINTS = {
+    403: "Only Park Patrol admins can open the admin console. If you should have access, "
+         "ask the system administrator to add your Google account.",
+    404: "The page you're looking for doesn't exist.",
+}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def friendly_errors(request: Request, exc: StarletteHTTPException):
+    if request.url.path.startswith("/api/") or "text/html" not in request.headers.get("accept", ""):
+        return await http_exception_handler(request, exc)
+    title = ERROR_TITLES.get(exc.status_code, "Something went wrong")
+    message = ERROR_HINTS.get(exc.status_code) or str(exc.detail)
+    page = (BASE_DIR / "static" / "error.html").read_text()
+    signin = '<a class="btn" href="/login">Try signing in again</a>' if exc.status_code in (401, 403) else ""
+    page = (page.replace("{{title}}", html.escape(title)).replace("{{message}}", html.escape(message))
+            .replace("{{signin}}", signin))
+    return HTMLResponse(page, status_code=exc.status_code)
+
+
+# ----------------------------------------------------------------------------
 # Startup
 # ----------------------------------------------------------------------------
 def restore_spots():
@@ -412,6 +493,8 @@ def restore_spots():
             if status == VIOLATION:
                 violation_groups[spot_id] = (spot_id,)
                 group_info[(spot_id,)] = {"started": status_since, "origin": (spot_id,)}
+    # Recent history survives restarts (and Render's free-plan sleeps)
+    events.extend(database.recent_events(events.maxlen))
 
 
 def monitor():

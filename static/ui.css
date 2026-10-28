@@ -747,3 +747,20 @@ input { caret-color: var(--green); }
 .rules li::marker { color: var(--green-ink); font-weight: 600; }
 .rules__help { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 .rules__help a { color: var(--green-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Text pages (privacy) */
+.doc { max-width: 720px; }
+.doc h1 { font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -.03em; margin-bottom: 10px; }
+.doc__lead { font-size: 17px; color: var(--muted); margin-bottom: 8px; }
+.doc h2 { font-size: 17px; margin: 32px 0 8px; }
+.doc p, .doc li { font-size: 15px; color: var(--ink-2); line-height: 1.65; }
+.doc ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.doc a { color: var(--green-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Error page */
+.error-page { min-height: 100vh; max-width: 480px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.error-page .brand { margin-bottom: 18px; }
+.error-page h1 { font-size: 28px; letter-spacing: -.03em; }
+.error-page p { font-size: 16px; color: var(--muted); }
+.error-page__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.sign__num.is-unknown { color: var(--line-strong); }
