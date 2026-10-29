@@ -56,9 +56,9 @@ DEFAULT_THRESHOLDS = {
     "car_match": 0.72,        # how similar (0-1) an object must be to a taught car to count as a car
 }
 
-# Half-height (pixels, straightened) of the strip checked around each painted line.
-# Only things actually on the line count, so cars parked close to it are fine.
-LINE_HALF = 5
+# Strips checked on each side of a painted line (pixels, straightened): skip GAP
+# pixels next to the paint, then look at the next SIDE pixels.
+GAP, SIDE = 3, 6
 
 # Yellow divider paint in HSV
 YELLOW_LOW = np.array([15, 90, 90])
@@ -154,24 +154,66 @@ def ensure_model():
     return True
 
 
+# Every taught picture is also learned turned 90/180/270 degrees: from above, a car
+# parked across, parallel, or facing the other way is still the same car.
+ROTATIONS = (None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
 class CarRecognizer:
+    """Knows the taught examples: the pictures in data/examples/ (car-*.png, item-*.png).
+
+    The pictures are the source of truth. Deleting a wrongly taught picture removes it
+    from what the recognizer knows; features are cached in object_examples.npz.
+    """
     MEAN = np.array([0.485, 0.456, 0.406], np.float32)
     STD = np.array([0.229, 0.224, 0.225], np.float32)
 
     def __init__(self):
         self.net = cv2.dnn.readNetFromONNX(str(MODEL_FILE)) if MODEL_FILE.exists() else None
-        self.vectors = np.zeros((0, 1280), np.float32)
+        self.names, self.vectors = [], np.zeros((0, 1280), np.float32)
         self.labels = np.array([], dtype="<U8")
+        self._load()
+
+    def _load(self):
+        files = sorted(EXAMPLES_DIR.glob("car-*.png")) + sorted(EXAMPLES_DIR.glob("item-*.png"))
+        cached = {}
         if EXAMPLES_FILE.exists():
             data = np.load(EXAMPLES_FILE)
-            self.vectors, self.labels = data["vectors"], data["labels"]
+            if "names" in data:
+                cached = dict(zip(data["names"].tolist(), data["vectors"]))
+        if self.net is None and not cached:
+            return
+        names, vectors = [], []
+        for f in files:
+            keys = [f"{f.name}@{r}" for r in range(len(ROTATIONS))]
+            if all(k in cached for k in keys):
+                found = [cached[k] for k in keys]
+            elif self.net is not None and (image := cv2.imread(str(f))) is not None:
+                found = self._rotated_features(image)
+            else:
+                continue
+            names += keys
+            vectors += found
+        self.names = names
+        self.vectors = np.array(vectors, np.float32).reshape(-1, 1280)
+        self.labels = np.array([n.split("-")[0] for n in names], dtype="<U8")
+        if set(names) != set(cached):
+            self._save()
+
+    def _save(self):
+        np.savez(EXAMPLES_FILE, names=np.array(self.names), vectors=self.vectors)
 
     @property
     def taught(self):
         return self.net is not None and (self.labels == CAR).any()
 
     def counts(self):
-        return int((self.labels == CAR).sum()), int((self.labels == ITEM).sum())
+        """(taught car pictures, taught non-car pictures)."""
+        per = len(ROTATIONS)
+        return int((self.labels == CAR).sum()) // per, int((self.labels == ITEM).sum()) // per
+
+    def _rotated_features(self, image):
+        return [self.features(image if r is None else cv2.rotate(image, r)) for r in ROTATIONS]
 
     def features(self, crop):
         img = cv2.cvtColor(cv2.resize(crop, (224, 224)), cv2.COLOR_BGR2RGB).astype(np.float32) / 255
@@ -180,14 +222,17 @@ class CarRecognizer:
         return v / (np.linalg.norm(v) + 1e-9)
 
     def add(self, crop, label):
-        self.vectors = np.vstack([self.vectors, self.features(crop)[None]])
-        self.labels = np.append(self.labels, label)
-        np.savez(EXAMPLES_FILE, vectors=self.vectors, labels=self.labels)
         EXAMPLES_DIR.mkdir(parents=True, exist_ok=True)
-        cv2.imwrite(str(EXAMPLES_DIR / f"{label}-{len(self.labels):04d}.png"), crop)
+        numbers = [int(p.stem.split("-")[1]) for p in EXAMPLES_DIR.glob("*-*.png") if p.stem.split("-")[1].isdigit()]
+        name = f"{label}-{max(numbers, default=0) + 1:04d}.png"
+        cv2.imwrite(str(EXAMPLES_DIR / name), crop)
+        self.names += [f"{name}@{r}" for r in range(len(ROTATIONS))]
+        self.vectors = np.vstack([self.vectors, np.array(self._rotated_features(crop))])
+        self.labels = np.append(self.labels, [label] * len(ROTATIONS))
+        self._save()
 
     def forget(self):
-        self.vectors = np.zeros((0, 1280), np.float32)
+        self.names, self.vectors = [], np.zeros((0, 1280), np.float32)
         self.labels = np.array([], dtype="<U8")
         EXAMPLES_FILE.unlink(missing_ok=True)
         for f in EXAMPLES_DIR.glob("*.png"):
@@ -252,22 +297,39 @@ class Detector:
 
         # Where each yellow line really is (lines are rarely exactly mid-bay)
         ref_yellow = cv2.inRange(ref_hsv, YELLOW_LOW, YELLOW_HIGH)
-        self.line_rows = []
+        self.line_rows, self.line_spans = [], []
         for b in range(len(BAYS)):
             lo, hi = int(b * BAY_H + 0.3 * BAY_H), int(b * BAY_H + 0.7 * BAY_H)
             rows = ref_yellow[lo:hi].sum(axis=1) / 255
-            found = rows.max() > 0.05 * RECT_W
-            self.line_rows.append(lo + int(np.argmax(rows)) if found else int(b * BAY_H + BAY_H / 2))
+            if rows.max() > 0.05 * RECT_W:
+                painted = np.where(rows >= 0.3 * rows.max())[0]
+                top, bottom = lo + int(painted.min()), lo + int(painted.max())
+            else:                                  # no paint found: assume a thin line mid-bay
+                top = bottom = int(b * BAY_H + BAY_H / 2)
+            self.line_spans.append((top, bottom))
+            self.line_rows.append((top + bottom) // 2)
+        self.ref_yellow_mask = ref_yellow
         self.regions = regions(self.line_rows)
         self.ref_yellow = {b: _share(ref_yellow, self.regions[f"divider{b}"]) for b in range(len(BAYS))}
         self._cache = {}
 
     # -- what's in the picture ----------------------------------------------
-    @staticmethod
-    def _line_cover(present, line):
-        """Longest stretch of the painted line (as a share of the bay's width) with something on it."""
-        band = present[max(0, line - LINE_HALF):line + LINE_HALF + 1, int(0.03 * RECT_W):int(0.93 * RECT_W)]
-        return _longest_run(band.max(axis=0) > 0) / RECT_W
+    def _line_cover(self, present, yellow, b):
+        """Longest stretch of a bay's line (share of the bay's width) that an object lies across.
+
+        A column counts when something is on BOTH sides of the painted line there (the
+        object continues across it), or when the line's paint is hidden there. Changes
+        right at the line's edges are ignored, so a camera nudged by a pixel or two
+        doesn't look like a car on the line.
+        """
+        top, bottom = self.line_spans[b]
+        x1, x2 = int(0.03 * RECT_W), int(0.93 * RECT_W)
+        above = present[max(0, top - GAP - SIDE):max(0, top - GAP), x1:x2].max(axis=0) > 0
+        below = present[bottom + GAP + 1:bottom + GAP + SIDE + 1, x1:x2].max(axis=0) > 0
+        paint_ref = self.ref_yellow_mask[top:bottom + 1, x1:x2].mean(axis=0)
+        paint_now = yellow[top:bottom + 1, x1:x2].mean(axis=0)
+        hidden = (paint_ref > 100) & (paint_now < 0.3 * paint_ref)
+        return _longest_run((above & below) | hidden) / RECT_W
 
     def _masks(self, straight):
         t = self.cal.thresholds
@@ -281,6 +343,13 @@ class Detector:
         new_edges = cv2.dilate(cv2.bitwise_and(_edges(gray), cv2.bitwise_not(self.ref_edges)), self.kernel)
         yellow = cv2.inRange(hsv, YELLOW_LOW, YELLOW_HIGH)
         return changed, new_edges, yellow
+
+    def _line_window(self, b):
+        """A spot-sized box centred on bay b's line: what a car lying across it fills."""
+        x1, y1, x2, y2 = self.regions[BAYS[b][0]]
+        half = (y2 - y1) // 2 + 8
+        line = self.line_rows[b]
+        return (x1, max(0, line - half), x2, min(RECT_H, line + half))
 
     def _kind(self, key, straight, mask, box):
         """CAR or ITEM for the object in `box`, re-checked only when the object changes."""
@@ -306,9 +375,8 @@ class Detector:
 
         spots, scores, groups, kinds = {}, {}, [], {}
         for b, (first, second) in enumerate(BAYS):
-            line = self.line_rows[b]
             # Double parking: something covers the strip around the yellow line across the bay
-            cover = self._line_cover(present, line)
+            cover = self._line_cover(present, yellow, b)
             visible = (_share(yellow, self.regions[f"divider{b}"]) / self.ref_yellow[b]) if self.ref_yellow[b] > 0.03 else 1.0
             straddle = cover >= t["straddle"] or visible < t["yellow_ratio"]
             scores[f"divider{b}"] = {"cover": round(cover, 2), "yellow": round(min(visible, 9.99), 2)}
@@ -321,7 +389,7 @@ class Detector:
                 occupied[spot] = share > t["spot"] or edges > t["edges"]
 
             if straddle:
-                kind, sim = self._kind(f"bay{b}", straight, present, self.regions[f"bay{b}"])
+                kind, sim = self._kind(f"bay{b}", straight, present, self._line_window(b))
                 kinds[first] = kinds[second] = (kind, sim)
                 if kind == CAR:
                     spots[first] = spots[second] = VIOLATION
@@ -348,13 +416,12 @@ class Detector:
             return 0
         t = self.cal.thresholds
         straight = self.cal.straighten(frame)
-        changed, new_edges, _ = self._masks(straight)
+        changed, new_edges, yellow = self._masks(straight)
         present = cv2.bitwise_or(changed, new_edges)
         saved = 0
         for b, (first, second) in enumerate(BAYS):
-            line = self.line_rows[b]
-            if self._line_cover(present, line) >= t["straddle"]:
-                self.recognizer.add(_crop(straight, self.regions[f"bay{b}"]), label)
+            if self._line_cover(present, yellow, b) >= t["straddle"]:
+                self.recognizer.add(_crop(straight, self._line_window(b)), label)
                 saved += 1
                 continue
             for spot in (first, second):

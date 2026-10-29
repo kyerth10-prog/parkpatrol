@@ -83,6 +83,10 @@ data/lot_calibration.json while watching --show:
   straddle      share of a line that must be covered to call double parking
   car_match     how closely an object must match a taught car (shown as car~0.00)
 Taught examples are saved as pictures in data/examples/ (good for your report).
+Taught something wrong (e.g. pressed C with a pine cone in a spot)? Delete that
+picture from data/examples/ and restart the tracker: it re-learns from what's left.
+Also teach the double-parking positions: park a car across a line (and parallel
+along it) and press C, so those views are learned too.
 If the room lighting changes a lot, retake the empty snapshot (step 3).
 
 
