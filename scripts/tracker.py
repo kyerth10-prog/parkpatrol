@@ -1,9 +1,11 @@
 """Park Patrol tracker: detects cars in Lot A and reports them to the website.
 
   python scripts/tracker.py --calibrate   one-time setup: click the parking corners,
-                                          then save an empty-lot snapshot
+                                          save an empty-lot snapshot, and teach it
+                                          what your toy cars look like
   python scripts/tracker.py               run detection, report spots, upload video
   python scripts/tracker.py --show        same, with a live window showing scores
+  python scripts/tracker.py --forget      delete all taught car / item examples
   python scripts/tracker.py --list        list cameras
 
 The video sent to the website has the detected spots drawn on it
@@ -20,8 +22,8 @@ import requests
 
 from camera import (API_KEY, BLANK_HINT, CAMERA_SOURCE, SERVER, TARGET_FPS, FrameReader,
                     encode, is_blank, list_cameras)
-from detection import (BAYS, DATA_DIR, VIOLATION, Calibration, Detector, draw, load_empty,
-                       save_empty)
+from detection import (BAYS, CAR, DATA_DIR, ITEM, VIOLATION, Calibration, CarRecognizer, Detector,
+                       draw, ensure_model, load_empty, save_empty)
 
 DETECT_FPS = 6
 STABLE_SECONDS = float(os.environ.get("TRACKER_STABLE_SECONDS", "1.5"))
@@ -56,8 +58,11 @@ def calibrate():
     for i, name in enumerate(CLICK_ORDER, 1):
         print(f"  {i}. {name}")
     print("Then REMOVE ALL CARS and press E to save the corners and the empty-lot snapshot.")
-    print("After that the boxes turn green/grey live: put a car in to test. R = redo, Q = quit.")
+    print("Teach it your cars: park toy cars, press C. Put other objects in spots, press O.")
+    print("Repeat both a few times with different cars, objects and positions. R = redo, Q = quit.")
 
+    ensure_model()
+    recognizer = CarRecognizer()
     empty = load_empty() if old else None
     detector_for = {"points": None, "detector": None}
     last_id, frame, message = -1, None, ""
@@ -77,7 +82,7 @@ def calibrate():
         if cal:
             # Live detection preview once an empty snapshot exists for these corners
             if empty is not None and detector_for["points"] != list(points):
-                detector_for.update(points=list(points), detector=Detector(cal, empty))
+                detector_for.update(points=list(points), detector=Detector(cal, empty, recognizer))
             result = detector_for["detector"].analyze(frame) if empty is not None else None
             view = draw(view, cal, result, show_scores=result is not None)
             cv2.imshow("Straightened lot", cal.straighten(frame))
@@ -89,7 +94,9 @@ def calibrate():
         elif empty is None:
             hint = "Remove ALL cars, then press E      R = redo corners"
         else:
-            hint = "Live test: add/remove cars      E = retake empty snapshot   R = redo   Q = done"
+            cars, items = recognizer.counts()
+            hint = (f"C = these are cars ({cars})   O = these are NOT cars ({items})   "
+                    "E = retake empty   Q = done")
         for y, text in ((30, hint), (60, message)):
             cv2.putText(view, text, (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 4, cv2.LINE_AA)
             cv2.putText(view, text, (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
@@ -100,6 +107,16 @@ def calibrate():
             break
         if key == ord("d"):
             message = save_debug(frame)
+        if key in (ord("c"), ord("o")) and detector_for["detector"] is not None:
+            label = CAR if key == ord("c") else ITEM
+            if recognizer.net is None:
+                message = "Car recognition model is missing (needs internet once to download)."
+            else:
+                saved = detector_for["detector"].teach(frame, label)
+                word = "car" if label == CAR else "non-car"
+                message = (f"Saved {saved} {word} example{'s' if saved != 1 else ''}. Move things around and repeat."
+                           if saved else "Nothing detected in the spots to learn from.")
+            print(message)
         if key == ord("r"):
             points.clear()
             empty = None
@@ -231,7 +248,15 @@ def run(show):
     if cal is None or empty is None:
         raise SystemExit("Not calibrated yet. Run: python scripts/tracker.py --calibrate "
                          "(and press E with the lot empty)")
-    detector = Detector(cal, empty)
+    ensure_model()
+    recognizer = CarRecognizer()
+    if recognizer.taught:
+        cars, items = recognizer.counts()
+        print(f"Car recognition: on ({cars} car examples, {items} non-car examples)")
+    else:
+        print("Car recognition: NOT TAUGHT YET - every object counts as a car. "
+              "Teach it in: python scripts/tracker.py --calibrate (keys C and O)")
+    detector = Detector(cal, empty, recognizer)
     reporter, uploader = Reporter(), Uploader()
     debouncer = Debouncer(reporter)
     reader = FrameReader(CAMERA_SOURCE)
@@ -270,6 +295,9 @@ def run(show):
 if __name__ == "__main__":
     if "--list" in sys.argv:
         list_cameras()
+    elif "--forget" in sys.argv:
+        CarRecognizer().forget()
+        print("Deleted all taught car and non-car examples.")
     elif "--calibrate" in sys.argv:
         calibrate()
     else:

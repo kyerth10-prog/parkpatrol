@@ -56,23 +56,33 @@ SPOT DETECTION (scripts/tracker.py)
 -----------------------------------
 One-time setup (redo if the camera or diorama moves):
 1. python scripts/tracker.py --calibrate
-2. Click the 4 corners of the covered parking, in this order:
+2. R, then click the 4 corners of the covered parking, in this order:
      1. A1 end, road side     2. A1 end, back
      3. A6 end, back          4. A6 end, road side
-   The 6 spot boxes appear; check they sit on the real spots (R = redo).
-3. Remove ALL cars, then press E (saves corners + empty-lot snapshot). Q to quit.
+3. Remove ALL cars and objects, then press E (corners + empty-lot snapshot).
+4. Teach it what a toy car is (it only counts toy cars, not other objects):
+     C = "these are cars": park toy cars in the spots, press C.
+         Do this for EVERY toy car you will use, in a few spots/angles.
+     O = "these are NOT cars": put other things in the spots (eraser, pen,
+         coin, phone, paper, keys...), press O. More variety = better.
+   Press each 4-6 times, moving things between presses. Watch the live
+   boxes: cars turn grey, other objects show "item". Q when done.
 
 Run (this replaces send_frame.py - it detects AND sends the video):
   python scripts/tracker.py           report spots to the website
   python scripts/tracker.py --show    same, plus a live window with scores
-A car must stay put ~1.5 s before it is reported. A car covering a bay's
-yellow line is reported as double parking for both spots in that bay.
+  python scripts/tracker.py --forget  delete all taught examples and start over
+A car must stay put ~1.5 s before it is reported.
+Double parking = one car on a bay's yellow line (parked across OR parallel):
+both spots in that bay become a violation. Non-car items never count.
 
 Tuning (only if detection is wrong): edit "thresholds" in
 data/lot_calibration.json while watching --show:
-  spot          lower = more sensitive to cars (shown next to each spot)
+  spot          lower = more sensitive to something being in a spot
   edges         lower = catches dark cars more easily
-  yellow_ratio  higher = flags double parking sooner
+  straddle      share of a line that must be covered to call double parking
+  car_match     how closely an object must match a taught car (shown as car~0.00)
+Taught examples are saved as pictures in data/examples/ (good for your report).
 If the room lighting changes a lot, retake the empty snapshot (step 3).
 
 
